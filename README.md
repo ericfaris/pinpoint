@@ -1,6 +1,6 @@
-# Triangulation
+# Pinpoint
 
-A real-time multiplayer web adaptation of the party game *Triangulation* (v1 —
+A real-time multiplayer web adaptation of the party game *Pinpoint* (v1 —
 in-person "Party Mode"). Players write one-word clues privately on their own
 devices; guessing happens out loud in the room; shared game state is cast to a
 TV via **Google Chromecast**.
@@ -13,9 +13,9 @@ A TypeScript monorepo (npm workspaces):
 
 | Package | What |
 |---|---|
-| `@triangulation/shared` | Canonical game-state data model, wire protocol, and spectator-safe projection types. |
-| `@triangulation/server` | Node + Socket.IO. Server-authoritative game engine (pure, deterministic), AI message generation (Anthropic) with a hybrid buffer + seed fallback, room registry. |
-| `@triangulation/client` | React + Vite. Two builds from one codebase — the **player** UI (`index.html`) and the TV **receiver** UI (`receiver.html`). |
+| `@pinpoint/shared` | Canonical game-state data model, wire protocol, and spectator-safe projection types. |
+| `@pinpoint/server` | Node + Socket.IO. Server-authoritative game engine (pure, deterministic), AI message generation (Anthropic) with a hybrid buffer + seed fallback, room registry. |
+| `@pinpoint/client` | React + Vite. Two builds from one codebase — the **player** UI (`index.html`) and the TV **receiver** UI (`receiver.html`). |
 
 The server is the single source of truth. Clients send *intents*; the server
 validates them against the engine and broadcasts spectator-safe projections —
@@ -52,7 +52,7 @@ npm run build
 node packages/server/dist/index.js   # serves client + Socket.IO on $PORT
 ```
 
-Or `docker build -t triangulation . && docker run -p 3001:3001 --env-file .env triangulation`.
+Or `docker build -t pinpoint . && docker run -p 3001:3001 --env-file .env pinpoint`.
 
 ## Environment
 

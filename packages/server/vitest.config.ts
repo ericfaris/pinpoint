@@ -7,7 +7,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@triangulation/shared': new URL('../shared/src/index.ts', import.meta.url).pathname,
+      '@pinpoint/shared': new URL('../shared/src/index.ts', import.meta.url).pathname,
     },
   },
 });

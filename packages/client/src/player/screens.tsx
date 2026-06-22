@@ -5,7 +5,7 @@ import {
   type PublicRoom,
   type PrivateState,
   type TeamId,
-} from '@triangulation/shared';
+} from '@pinpoint/shared';
 import { store } from '../common/store.js';
 import { Board, CategoryTag, Timer, Tokens } from '../common/ui.js';
 

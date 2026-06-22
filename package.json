@@ -1,20 +1,20 @@
 {
-  "name": "triangulation",
+  "name": "pinpoint",
   "private": true,
   "version": "1.0.0",
-  "description": "Real-time multiplayer web adaptation of Triangulation (Party Mode, v1)",
+  "description": "Real-time multiplayer web adaptation of Pinpoint (Party Mode, v1)",
   "workspaces": [
     "packages/shared",
     "packages/server",
     "packages/client"
   ],
   "scripts": {
-    "build": "npm run build -w @triangulation/shared && npm run build -w @triangulation/client && npm run build -w @triangulation/server",
+    "build": "npm run build -w @pinpoint/shared && npm run build -w @pinpoint/client && npm run build -w @pinpoint/server",
     "dev": "concurrently -n server,client -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
-    "dev:server": "npm run dev -w @triangulation/server",
-    "dev:client": "npm run dev -w @triangulation/client",
+    "dev:server": "npm run dev -w @pinpoint/server",
+    "dev:client": "npm run dev -w @pinpoint/client",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test -w @triangulation/server"
+    "test": "npm run test -w @pinpoint/server"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",

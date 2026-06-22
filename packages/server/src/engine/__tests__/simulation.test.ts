@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TOKENS_TO_WIN } from '@triangulation/shared';
+import { TOKENS_TO_WIN } from '@pinpoint/shared';
 import { addPlayers, checkInvariants, makeEngine, playFullGame } from './harness.js';
 import { makeRng } from '../rng.js';
 

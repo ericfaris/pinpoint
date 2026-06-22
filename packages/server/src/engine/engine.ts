@@ -1,5 +1,5 @@
 // ============================================================================
-// Triangulation game engine — pure, server-authoritative state machine.
+// Pinpoint game engine — pure, server-authoritative state machine.
 // One GameEngine instance owns exactly one GameRoom. Net/timer side effects
 // live outside; this file is deterministic given { rng, cardSource, now }.
 // ============================================================================
@@ -22,7 +22,7 @@ import {
   type RoomSettings,
   type TeamId,
   type ThreePlayerRole,
-} from '@triangulation/shared';
+} from '@pinpoint/shared';
 import { normalizeText, type CardSource } from './cards.js';
 import { makeRng, type Rng } from './rng.js';
 

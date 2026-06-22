@@ -1,7 +1,7 @@
 // Card source abstraction. The engine depends only on this interface so it
 // can be driven by a deterministic source in tests and by the AI buffer
 // (with seed-set fallback) in production.
-import { CATEGORIES, type Category, type Difficulty, type MessageCard, type MessageOption } from '@triangulation/shared';
+import { CATEGORIES, type Category, type Difficulty, type MessageCard, type MessageOption } from '@pinpoint/shared';
 import type { Rng } from './rng.js';
 
 export interface CardSource {

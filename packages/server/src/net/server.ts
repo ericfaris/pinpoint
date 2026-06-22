@@ -6,7 +6,7 @@ import {
   type Ack,
   type ClientToServer,
   type ServerToClient,
-} from '@triangulation/shared';
+} from '@pinpoint/shared';
 import { toPrivateState, toPublicRoom } from '../engine/project.js';
 import type { RoomManager, RoomRuntime } from './rooms.js';
 

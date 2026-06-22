@@ -1,4 +1,4 @@
-# Triangulation — single image: builds shared + client + server, runs the
+# Pinpoint — single image: builds shared + client + server, runs the
 # Node server which serves the built client and the Socket.IO endpoint.
 FROM node:22-slim AS build
 WORKDIR /app

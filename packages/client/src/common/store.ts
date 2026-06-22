@@ -10,7 +10,7 @@ import {
   type PublicRoom,
   type RotationMode,
   type TeamId,
-} from '@triangulation/shared';
+} from '@pinpoint/shared';
 
 export interface GameState {
   connected: boolean;

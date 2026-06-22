@@ -1,5 +1,5 @@
 {
-  "name": "@triangulation/server",
+  "name": "@pinpoint/server",
   "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
-    "@triangulation/shared": "*",
+    "@pinpoint/shared": "*",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "socket.io": "^4.8.1"

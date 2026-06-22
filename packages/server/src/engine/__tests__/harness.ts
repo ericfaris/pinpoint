@@ -5,7 +5,7 @@ import {
   TOKENS_TO_WIN,
   type BoardSlot,
   type GameRoom,
-} from '@triangulation/shared';
+} from '@pinpoint/shared';
 import { GameEngine } from '../engine.js';
 import { SyntheticCardSource, normalizeText } from '../cards.js';
 import { makeRng } from '../rng.js';

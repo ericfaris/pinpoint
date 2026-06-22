@@ -1,5 +1,5 @@
 // ============================================================================
-// Triangulation — Canonical server-side game-state data model (PRD §9.5).
+// Pinpoint — Canonical server-side game-state data model (PRD §9.5).
 // This is the single source of truth. Clients render projections of it with
 // hidden fields stripped (see projection.ts / spectator-safe rule §5).
 // ============================================================================

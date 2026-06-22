@@ -11,7 +11,7 @@ import type {
   PublicRoom,
   PublicRound,
   PrivateState,
-} from '@triangulation/shared';
+} from '@pinpoint/shared';
 import type { GameEngine } from './engine.js';
 
 function projectClueBoard(b: ClueBoard): PublicClueBoard {

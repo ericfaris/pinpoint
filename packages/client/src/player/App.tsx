@@ -39,7 +39,7 @@ export default function App() {
     <div className="app center">
       <div className="stack" style={{ width: '100%' }}>
         <div className="center-text stack">
-          <div className="title">Triangulation</div>
+          <div className="title">Pinpoint</div>
           <div className="muted">In-person party game · cast to your TV</div>
         </div>
         {g.error && <ErrorBanner message={g.error} />}

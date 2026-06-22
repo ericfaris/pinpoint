@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@triangulation/shared': resolve(__dirname, '../shared/src/index.ts'),
+      '@pinpoint/shared': resolve(__dirname, '../shared/src/index.ts'),
     },
   },
   build: {

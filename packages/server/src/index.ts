@@ -7,7 +7,7 @@ import { existsSync } from 'node:fs';
 import 'dotenv/config';
 import express from 'express';
 import { Server } from 'socket.io';
-import { SOCKET_PATH } from '@triangulation/shared';
+import { SOCKET_PATH } from '@pinpoint/shared';
 import { CardBuffer } from './ai/buffer.js';
 import { MessageGenerator } from './ai/generator.js';
 import { RoomManager } from './net/rooms.js';
@@ -60,7 +60,7 @@ const io = new Server(httpServer, {
 attachSocketServer(io, rooms);
 
 httpServer.listen(PORT, () => {
-  console.log(`[startup] Triangulation server on :${PORT} (socket ${SOCKET_PATH})`);
+  console.log(`[startup] Pinpoint server on :${PORT} (socket ${SOCKET_PATH})`);
   // Pre-warm card pools in the background (non-blocking).
   void cardBuffer.warmup().then(() => {
     console.log('[startup] card pools warmed:', cardBuffer.stats());

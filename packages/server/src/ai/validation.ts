@@ -1,6 +1,6 @@
 // Automated validation pipeline for AI-generated options (§4.12).
 // Runs before any option may enter its category pool.
-import { type Category } from '@triangulation/shared';
+import { type Category } from '@pinpoint/shared';
 import { normalizeText } from '../engine/cards.js';
 
 // Lightweight blocklist; production would source a fuller list.

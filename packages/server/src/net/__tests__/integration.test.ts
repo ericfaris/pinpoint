@@ -10,7 +10,7 @@ import {
   type Ack,
   type PrivateState,
   type PublicRoom,
-} from '@triangulation/shared';
+} from '@pinpoint/shared';
 import { SyntheticCardSource } from '../../engine/cards.js';
 import { makeRng } from '../../engine/rng.js';
 import { RoomManager } from '../rooms.js';

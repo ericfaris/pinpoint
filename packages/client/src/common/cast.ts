@@ -2,7 +2,7 @@
 // loads in Chrome on Android/desktop. We use it solely for the handshake —
 // launching the receiver app and passing the room code — while the receiver
 // opens its own WebSocket for game data.
-const CAST_NAMESPACE = 'urn:x-cast:com.mooseflip.triangulation';
+const CAST_NAMESPACE = 'urn:x-cast:com.mooseflip.pinpoint';
 const SENDER_SDK = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
 
 declare global {

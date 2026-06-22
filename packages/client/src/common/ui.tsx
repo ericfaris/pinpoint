@@ -5,7 +5,7 @@ import {
   type BoardSlot,
   type Category,
   type PublicClueBoard,
-} from '@triangulation/shared';
+} from '@pinpoint/shared';
 import { useGame } from './useGame.js';
 
 export function Tokens({ count, big }: { count: number; big?: boolean }) {

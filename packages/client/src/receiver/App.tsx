@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import type { PublicRoom, TeamId } from '@triangulation/shared';
+import type { PublicRoom, TeamId } from '@pinpoint/shared';
 import { useGame } from '../common/useGame.js';
 import { store } from '../common/store.js';
 import { Board, CategoryTag, Timer, Tokens } from '../common/ui.js';
@@ -42,7 +42,7 @@ export default function App() {
   if (!g.pub) {
     return (
       <div className="tv center">
-        <div className="brand">TRIANGULATION</div>
+        <div className="brand">PINPOINT</div>
         <div className="muted">Waiting for a room…</div>
       </div>
     );
@@ -63,7 +63,7 @@ function LobbyTV({ pub, baseUrl }: { pub: PublicRoom; baseUrl: string }) {
 
   return (
     <div className="tv">
-      <div className="brand">TRIANGULATION</div>
+      <div className="brand">PINPOINT</div>
       <div className="spread" style={{ flex: 1 }}>
         <div className="stack center-text">
           <div style={{ fontSize: '2vw' }} className="muted">

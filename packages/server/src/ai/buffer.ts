@@ -8,7 +8,7 @@ import {
   type Difficulty,
   type MessageCard,
   type MessageOption,
-} from '@triangulation/shared';
+} from '@pinpoint/shared';
 import { type CardSource, SyntheticCardSource, nextCardId, normalizeText } from '../engine/cards.js';
 import { makeRng } from '../engine/rng.js';
 import type { MessageGenerator } from './generator.js';

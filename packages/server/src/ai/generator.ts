@@ -2,7 +2,7 @@
 // the Anthropic Messages API with structured outputs, validates each option,
 // and feeds per-category validated pools. Generation is server-side only.
 import Anthropic from '@anthropic-ai/sdk';
-import { CATEGORY_LABELS, type Category, type Difficulty } from '@triangulation/shared';
+import { CATEGORY_LABELS, type Category, type Difficulty } from '@pinpoint/shared';
 import { validateOption } from './validation.js';
 
 const DIFFICULTY_GUIDANCE: Record<Difficulty, string> = {

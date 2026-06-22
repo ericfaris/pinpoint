@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CLUE_WRITE_SECONDS,
   GUESS_SECONDS,
-} from '@triangulation/shared';
+} from '@pinpoint/shared';
 import { addPlayers, checkInvariants, makeEngine } from './harness.js';
 import { toPrivateState, toPublicRoom } from '../project.js';
 
