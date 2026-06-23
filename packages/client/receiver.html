@@ -16,6 +16,26 @@
     -->
     <script type="module" src="/src/receiver/main.tsx"></script>
     <script>
+      // Poll /api/cast-room every 2s. When we get a code, redirect with ?code=
+      // in the URL — every version of the receiver React app handles that param.
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('code')) return; // already have a code, skip polling
+        var interval = setInterval(function () {
+          fetch('/api/cast-room', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (d && d.code) {
+                clearInterval(interval);
+                var v = params.get('v') || '';
+                window.location.replace('/receiver.html?code=' + d.code + (v ? '&v=' + v : ''));
+              }
+            })
+            .catch(function () {});
+        }, 2000);
+      })();
+    </script>
+    <script>
       window.__castPendingCode = null;
       window.__castInitError = null;
       (function () {

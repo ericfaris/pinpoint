@@ -25,8 +25,6 @@ const errAck = (error: string): Ack<never> => ({ ok: false, error });
 export function attachSocketServer(io: IO, rooms: RoomManager): void {
   const data = (s: Sock) => s.data as SocketData;
   const standbyReceivers = new Set<string>(); // socketIds waiting for a room code
-  let pendingCastCode: string | null = null;   // most recent room created with canCast
-  let pendingCastAt = 0;
 
   function broadcast(runtime: RoomRuntime): void {
     const now = Date.now();
@@ -77,8 +75,7 @@ export function attachSocketServer(io: IO, rooms: RoomManager): void {
         socket.join(code);
         socket.emit('host:created', { code });
         if (payload.canCast) {
-          pendingCastCode = code;
-          pendingCastAt = Date.now();
+          rooms.setPendingCastCode(code);
           for (const sid of standbyReceivers) io.to(sid).emit('cast:roomCode', { code });
           standbyReceivers.clear();
         }
@@ -103,9 +100,9 @@ export function attachSocketServer(io: IO, rooms: RoomManager): void {
     });
 
     socket.on('receiver:standby', () => {
-      // If a recent cast room already exists, deliver immediately
-      if (pendingCastCode && Date.now() - pendingCastAt < 120_000) {
-        io.to(socket.id).emit('cast:roomCode', { code: pendingCastCode });
+      const code = rooms.getPendingCastCode();
+      if (code) {
+        io.to(socket.id).emit('cast:roomCode', { code });
       } else {
         standbyReceivers.add(socket.id);
       }

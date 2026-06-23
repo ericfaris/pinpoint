@@ -39,6 +39,11 @@ app.get('/api/config', (_req, res) => {
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, rooms: rooms.all().length, pools: cardBuffer.stats() });
 });
+app.get('/api/cast-room', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const code = rooms.getPendingCastCode();
+  res.json({ code });
+});
 
 // Serve the built client if present (player at /, receiver at /receiver/).
 const clientDist = join(__dirname, '../../client/dist');

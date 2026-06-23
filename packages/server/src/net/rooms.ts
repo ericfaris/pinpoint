@@ -17,6 +17,19 @@ export interface RoomRuntime {
 export class RoomManager {
   private readonly rooms = new Map<string, RoomRuntime>();
   private readonly rng = makeRng();
+  private pendingCastCode: string | null = null;
+  private pendingCastAt = 0;
+
+  setPendingCastCode(code: string): void {
+    this.pendingCastCode = code;
+    this.pendingCastAt = Date.now();
+  }
+  getPendingCastCode(): string | null {
+    if (!this.pendingCastCode) return null;
+    if (Date.now() - this.pendingCastAt > 120_000) return null;
+    if (!this.rooms.has(this.pendingCastCode)) return null;
+    return this.pendingCastCode;
+  }
 
   constructor(private readonly cardSource: CardSource) {}
 
