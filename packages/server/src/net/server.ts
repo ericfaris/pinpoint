@@ -24,6 +24,7 @@ const errAck = (error: string): Ack<never> => ({ ok: false, error });
 
 export function attachSocketServer(io: IO, rooms: RoomManager): void {
   const data = (s: Sock) => s.data as SocketData;
+  const standbyReceivers = new Set<string>(); // socketIds waiting for a room code
 
   function broadcast(runtime: RoomRuntime): void {
     const now = Date.now();
@@ -82,7 +83,18 @@ export function attachSocketServer(io: IO, rooms: RoomManager): void {
       const runtime = runtimeForSocket(socket);
       if (!runtime) return;
       runtime.engine.setCastConnected(connected);
+      if (connected && standbyReceivers.size > 0) {
+        const code = runtime.engine.room.code;
+        for (const sid of standbyReceivers) {
+          io.to(sid).emit('cast:roomCode', { code });
+        }
+        standbyReceivers.clear();
+      }
       broadcast(runtime);
+    });
+
+    socket.on('receiver:standby', () => {
+      standbyReceivers.add(socket.id);
     });
 
     // ---- Join (lobby or mid-game; reconnect via token) ----
@@ -209,6 +221,7 @@ export function attachSocketServer(io: IO, rooms: RoomManager): void {
 
     // ---- Disconnect ----
     socket.on('disconnect', () => {
+      standbyReceivers.delete(socket.id);
       const code = data(socket).code;
       if (!code) return;
       const runtime = rooms.get(code);

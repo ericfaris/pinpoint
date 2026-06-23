@@ -4,9 +4,11 @@ import '../common/styles.css';
 import App from './App.js';
 import { store } from '../common/store.js';
 
-// Wire up the handler for Cast codes arriving after React boots.
-// Codes that arrived before React loaded are stored in window.__castPendingCode
-// by the inline script in receiver.html.
+// Tell the server we're a receiver waiting for a room code.
+// The server will push cast:roomCode when the host casts (no Cast messaging needed).
+store.receiverStandby();
+
+// Also handle codes delivered via Cast custom messages (best-effort fallback).
 (window as any).__castOnCode = (code: string) => void store.receiverSubscribe(code);
 const pending = (window as any).__castPendingCode as string | null;
 if (pending) void store.receiverSubscribe(pending);

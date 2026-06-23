@@ -51,6 +51,7 @@ class GameStore {
     this.socket.on('host:created', ({ code }: { code: string }) => this.patch({ code }));
     this.socket.on('error', ({ message }: { message: string }) => this.patch({ error: message }));
     this.socket.on('room:closed', () => this.patch({ pub: null, priv: null, error: 'Room closed.' }));
+    this.socket.on('cast:roomCode', ({ code }) => this.receiverSubscribe(code));
   }
 
   subscribe(l: Listener): () => void {
@@ -184,6 +185,10 @@ class GameStore {
   }
 
   // ---- receiver ----
+  receiverStandby() {
+    this.socket.emit('receiver:standby', {});
+  }
+
   async receiverSubscribe(code: string): Promise<boolean> {
     const res = await this.emit('receiver:subscribe', { code });
     if (res.ok) this.patch({ code });

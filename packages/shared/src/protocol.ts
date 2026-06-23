@@ -40,6 +40,9 @@ export interface ClientToServer {
     ack: (res: Ack<{}>) => void,
   ) => void;
 
+  /** TV receiver: no room code yet, wait for host to cast. */
+  'receiver:standby': (_: {}) => void;
+
   /** Host moves a player to a team in the lobby. */
   'lobby:assignTeam': (payload: { playerId: string; teamId: TeamId }) => void;
   /** Host updates room settings in the lobby. */
@@ -87,6 +90,9 @@ export interface ServerToClient {
   'room:closed': (payload: { reason: string }) => void;
   /** Generic non-fatal error toast. */
   'error': (payload: { message: string }) => void;
+
+  /** Server pushes room code to a standby receiver when the host casts. */
+  'cast:roomCode': (payload: { code: string }) => void;
 }
 
 export type Ack<T> = { ok: true; data: T } | { ok: false; error: string };
