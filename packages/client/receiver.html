@@ -5,29 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pinpoint — TV</title>
     <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
-    <script>
-      // Initialize Cast synchronously before React loads — Cast has a startup
-      // timeout and can't wait for module chunks to fetch and parse.
-      (function () {
-        if (!window.cast || !window.cast.framework) return;
-        var NS = 'urn:x-cast:com.mooseflip.pinpoint';
-        var ctx = cast.framework.CastReceiverContext.getInstance();
-        window.__castPendingCode = null;
-        ctx.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, function (e) {
-          try { ctx.sendCustomMessage(NS, e.senderId, { type: 'ready' }); } catch (_) {}
-        });
-        ctx.addCustomMessageListener(NS, function (e) {
-          var code = e && e.data && e.data.code;
-          if (!code) return;
-          window.__castPendingCode = String(code);
-          if (window.__castOnCode) window.__castOnCode(window.__castPendingCode);
-        });
-        ctx.start({ disableIdleTimeout: true });
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      Module script is deferred (runs after parsing completes).
+      The inline script below is a regular script — it runs immediately
+      when the parser reaches it, BEFORE the module executes.
+      This guarantees ctx.start() is called while the module is still loading.
+    -->
     <script type="module" src="/src/receiver/main.tsx"></script>
+    <script>
+      window.__castPendingCode = null;
+      window.__castInitError = null;
+      (function () {
+        try {
+          if (!window.cast || !window.cast.framework || !window.cast.framework.CastReceiverContext) {
+            window.__castInitError = 'Cast SDK not available on window';
+            return;
+          }
+          var NS = 'urn:x-cast:com.mooseflip.pinpoint';
+          var ctx = cast.framework.CastReceiverContext.getInstance();
+
+          // PlayerManager must be obtained before ctx.start() in CAF
+          var pm = ctx.getPlayerManager();
+          var audio = document.createElement('audio');
+          document.body.appendChild(audio);
+          pm.setMediaElement(audio);
+
+          ctx.addCustomMessageListener(NS, function (e) {
+            var code = e && e.data && e.data.code;
+            if (!code) return;
+            window.__castPendingCode = String(code);
+            if (window.__castOnCode) window.__castOnCode(window.__castPendingCode);
+          });
+
+          ctx.start({ disableIdleTimeout: true });
+        } catch (err) {
+          window.__castInitError = String(err);
+        }
+      })();
+    </script>
   </body>
 </html>

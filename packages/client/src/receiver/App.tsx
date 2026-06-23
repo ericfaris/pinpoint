@@ -26,10 +26,16 @@ export default function App() {
   }, []);
 
   if (!g.pub) {
+    const castError = (window as any).__castInitError as string | null;
     return (
       <div className="tv center">
         <div className="brand">PINPOINT</div>
         <div className="muted">Waiting for a room…</div>
+        {castError && (
+          <div className="muted" style={{ fontSize: '1.2vw', color: 'red', marginTop: '1vw' }}>
+            Cast init error: {castError}
+          </div>
+        )}
       </div>
     );
   }
