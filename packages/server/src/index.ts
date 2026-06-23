@@ -42,11 +42,17 @@ app.get('/api/health', (_req, res) => {
 
 // Serve the built client if present (player at /, receiver at /receiver/).
 const clientDist = join(__dirname, '../../client/dist');
+const DEPLOY_VERSION = Date.now().toString(36);
 if (existsSync(clientDist)) {
-  // Prevent Chromecast from caching receiver.html — it must always fetch fresh.
-  app.get('/receiver.html', (_req, res) => {
-    res.setHeader('Cache-Control', 'no-store');
-    res.sendFile(join(clientDist, 'receiver.html'));
+  // Redirect /receiver.html to a versioned URL so the Chromecast never serves
+  // a cached copy — the version changes on every deploy.
+  app.get('/receiver.html', (req, res) => {
+    if (req.query.v === DEPLOY_VERSION) {
+      res.setHeader('Cache-Control', 'no-store');
+      res.sendFile(join(clientDist, 'receiver.html'));
+    } else {
+      res.redirect(302, `/receiver.html?v=${DEPLOY_VERSION}`);
+    }
   });
   app.use(express.static(clientDist));
   // SPA fallback for the player deep-link routes (/, /join?code=…). The TV
