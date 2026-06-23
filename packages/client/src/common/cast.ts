@@ -87,9 +87,13 @@ export async function initCast(receiverAppId: string): Promise<CastController | 
             /* noop */
           }
         };
-        // Send immediately, then retry — the receiver app may not have called
-        // ctx.start() yet when requestSession() resolves, so the first message
-        // is often dropped.
+        // Re-send when the receiver signals ready (most reliable path).
+        try {
+          session.addMessageListener(CAST_NAMESPACE, (_ns: string, msg: string) => {
+            try { if (JSON.parse(msg)?.type === 'ready') sendCode(); } catch { /* noop */ }
+          });
+        } catch { /* noop */ }
+        // Also retry on a fixed schedule in case the ready signal is missed.
         sendCode();
         [500, 1500, 3000, 6000].forEach((ms) => setTimeout(sendCode, ms));
         connectionCb?.(true);

@@ -4,7 +4,6 @@ import type { PublicRoom, TeamId } from '@pinpoint/shared';
 import { useGame } from '../common/useGame.js';
 import { store } from '../common/store.js';
 import { Board, CategoryTag, Timer, Tokens } from '../common/ui.js';
-import { CAST_NAMESPACE } from '../common/cast.js';
 
 const teamClass = (t: TeamId) => (t === 'A' ? 'teamA' : 'teamB');
 const nameOf = (pub: PublicRoom, id: string) =>
@@ -14,7 +13,7 @@ export default function App() {
   const g = useGame();
   const [baseUrl, setBaseUrl] = useState(window.location.origin);
 
-  // Resolve the room code: ?code= (local), or via Cast custom message channel.
+  // Resolve base URL for QR codes; Cast and ?code= handled in main.tsx.
   useEffect(() => {
     fetch('/api/config')
       .then((r) => r.json())
@@ -23,20 +22,7 @@ export default function App() {
 
     const params = new URLSearchParams(window.location.search);
     const fromQuery = params.get('code');
-    if (fromQuery) {
-      void store.receiverSubscribe(fromQuery);
-      return;
-    }
-    // Running on a Chromecast: read the code off the Cast receiver channel.
-    const cast = (window as { cast?: any }).cast;
-    if (cast?.framework?.CastReceiverContext) {
-      const ctx = cast.framework.CastReceiverContext.getInstance();
-      ctx.addCustomMessageListener(CAST_NAMESPACE, (event: any) => {
-        const code = event?.data?.code;
-        if (code) void store.receiverSubscribe(String(code));
-      });
-      ctx.start();
-    }
+    if (fromQuery) void store.receiverSubscribe(fromQuery);
   }, []);
 
   if (!g.pub) {
