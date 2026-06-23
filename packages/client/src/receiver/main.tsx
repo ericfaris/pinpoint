@@ -3,24 +3,13 @@ import { createRoot } from 'react-dom/client';
 import '../common/styles.css';
 import App from './App.js';
 import { store } from '../common/store.js';
-import { CAST_NAMESPACE } from '../common/cast.js';
 
-// Initialize Cast before React mounts so listeners are registered immediately,
-// before the sender's retries fire and before SENDER_CONNECTED can be missed.
-try {
-  const _cast = (window as { cast?: any }).cast;
-  if (_cast?.framework?.CastReceiverContext) {
-    const ctx = _cast.framework.CastReceiverContext.getInstance();
-    ctx.addEventListener(_cast.framework.system.EventType.SENDER_CONNECTED, (event: any) => {
-      try { ctx.sendCustomMessage(CAST_NAMESPACE, event.senderId, { type: 'ready' }); } catch { /* noop */ }
-    });
-    ctx.addCustomMessageListener(CAST_NAMESPACE, (event: any) => {
-      const code = event?.data?.code;
-      if (code) void store.receiverSubscribe(String(code));
-    });
-    ctx.start({ disableIdleTimeout: true });
-  }
-} catch { /* noop */ }
+// Wire up the handler for Cast codes arriving after React boots.
+// Codes that arrived before React loaded are stored in window.__castPendingCode
+// by the inline script in receiver.html.
+(window as any).__castOnCode = (code: string) => void store.receiverSubscribe(code);
+const pending = (window as any).__castPendingCode as string | null;
+if (pending) void store.receiverSubscribe(pending);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
