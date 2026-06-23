@@ -107,6 +107,7 @@ export function attachSocketServer(io: IO, rooms: RoomManager): void {
       data(socket).isReceiver = true;
       runtime.receivers.add(socket.id);
       socket.join(code);
+      runtime.engine.setCastConnected(true);
       ack(okAck({}));
       broadcast(runtime);
     });
@@ -214,6 +215,7 @@ export function attachSocketServer(io: IO, rooms: RoomManager): void {
       if (!runtime) return;
       if (data(socket).isReceiver) {
         runtime.receivers.delete(socket.id);
+        if (runtime.receivers.size === 0) runtime.engine.setCastConnected(false);
       } else {
         const playerId = runtime.sockets.get(socket.id);
         runtime.sockets.delete(socket.id);
