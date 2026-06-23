@@ -36,6 +36,12 @@ export default function App() {
         if (code) void store.receiverSubscribe(String(code));
       });
       ctx.start();
+      // Signal sender that receiver is ready. The sender may have already sent the
+      // room code before ctx.start() was called (a common race), so this triggers a
+      // re-send from the sender side.
+      try {
+        ctx.sendCustomMessage(CAST_NAMESPACE, undefined, { type: 'ready' });
+      } catch { /* noop */ }
     }
   }, []);
 

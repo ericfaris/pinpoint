@@ -80,12 +80,23 @@ export async function initCast(receiverAppId: string): Promise<CastController | 
       await context.requestSession();
       const session = context.getCurrentSession();
       if (session) {
-        // pass the room code to the receiver app over the custom channel
+        const sendCode = () => {
+          try {
+            session.sendMessage(CAST_NAMESPACE, { type: 'room', code });
+          } catch {
+            /* noop */
+          }
+        };
+        // Re-send code when receiver signals it's ready (handles the common race
+        // where requestSession() resolves before the receiver app has called ctx.start()).
         try {
-          session.sendMessage(CAST_NAMESPACE, { type: 'room', code });
-        } catch {
-          /* receiver may read code another way */
-        }
+          session.addMessageListener(CAST_NAMESPACE, (_ns: string, msg: string) => {
+            try {
+              if (JSON.parse(msg)?.type === 'ready') sendCode();
+            } catch { /* noop */ }
+          });
+        } catch { /* noop */ }
+        sendCode();
         connectionCb?.(true);
       }
     },
