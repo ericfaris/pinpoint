@@ -17,7 +17,9 @@ if (_cast?.framework?.CastReceiverContext) {
     const code = event?.data?.code;
     if (code) void store.receiverSubscribe(String(code));
   });
-  ctx.start();
+  const options = new _cast.framework.CastReceiverOptions();
+  options.disableIdleTimeout = true;
+  ctx.start(options);
 }
 
 createRoot(document.getElementById('root')!).render(

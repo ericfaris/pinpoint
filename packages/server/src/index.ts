@@ -43,6 +43,11 @@ app.get('/api/health', (_req, res) => {
 // Serve the built client if present (player at /, receiver at /receiver/).
 const clientDist = join(__dirname, '../../client/dist');
 if (existsSync(clientDist)) {
+  // Prevent Chromecast from caching receiver.html — it must always fetch fresh.
+  app.get('/receiver.html', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.sendFile(join(clientDist, 'receiver.html'));
+  });
   app.use(express.static(clientDist));
   // SPA fallback for the player deep-link routes (/, /join?code=…). The TV
   // receiver is served directly as /receiver.html by express.static above.
