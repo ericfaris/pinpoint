@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../common/useGame.js';
 import { store } from '../common/store.js';
 import { initCast, isCastSupported, type CastController } from '../common/cast.js';
+import { useWakeLock } from '../common/useWakeLock.js';
 import { GameOver, Guessing, Lobby, Paused, RoundEnd, WriteClues } from './screens.js';
 
 type View = 'landing' | 'host' | 'join';
@@ -225,6 +226,10 @@ function InGame() {
   const g = useGame();
   const pub = g.pub!;
   const priv = g.priv!;
+
+  // Lobby + gameplay both run long stretches with no touches (writing clues,
+  // guessing out loud) — keep the player's screen from auto-locking.
+  useWakeLock(true);
 
   return (
     <div className="app stack">
