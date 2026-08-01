@@ -71,6 +71,7 @@ export function attachSocketServer(io: IO, rooms: RoomManager): void {
       try {
         const runtime = rooms.create();
         const code = runtime.engine.room.code;
+        console.log(`[room] ${code} created`);
         data(socket).code = code;
         socket.join(code);
         socket.emit('host:created', { code });
@@ -125,7 +126,11 @@ export function attachSocketServer(io: IO, rooms: RoomManager): void {
     // ---- TV receiver subscribes read-only ----
     socket.on('receiver:subscribe', ({ code }, ack) => {
       const runtime = rooms.get(code);
-      if (!runtime) return ack(errAck('Room not found.'));
+      if (!runtime) {
+        console.log(`[receiver] subscribe to ${code} failed: room not found`);
+        return ack(errAck('Room not found.'));
+      }
+      console.log(`[receiver] subscribed to ${code}`);
       data(socket).code = code;
       data(socket).isReceiver = true;
       runtime.receivers.add(socket.id);
@@ -239,13 +244,18 @@ export function attachSocketServer(io: IO, rooms: RoomManager): void {
       if (!runtime) return;
       if (data(socket).isReceiver) {
         runtime.receivers.delete(socket.id);
+        console.log(`[receiver] disconnected from ${code} (${runtime.receivers.size} receivers left)`);
         if (runtime.receivers.size === 0) runtime.engine.setCastConnected(false);
       } else {
         const playerId = runtime.sockets.get(socket.id);
         runtime.sockets.delete(socket.id);
         if (playerId) runtime.engine.disconnect(playerId);
       }
-      if (!rooms.closeIfEmpty(code)) broadcast(runtime);
+      if (rooms.closeIfEmpty(code)) {
+        console.log(`[room] ${code} closed (empty)`);
+      } else {
+        broadcast(runtime);
+      }
     });
   });
 }

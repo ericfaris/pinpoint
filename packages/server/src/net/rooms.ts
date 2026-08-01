@@ -14,6 +14,9 @@ export interface RoomRuntime {
   timer: NodeJS.Timeout | null;
 }
 
+/** How long a just-created room is protected from closeIfEmpty (§4.1.2). */
+const ROOM_EMPTY_GRACE_MS = 60_000;
+
 export class RoomManager {
   private readonly rooms = new Map<string, RoomRuntime>();
   private readonly rng = makeRng();
@@ -76,10 +79,14 @@ export class RoomManager {
     const r = this.rooms.get(code);
     if (!r) return false;
     const anyConnected = r.engine.room.players.some((p) => p.connected);
-    if (!anyConnected && r.receivers.size === 0) {
-      this.close(code);
-      return true;
-    }
-    return false;
+    if (anyConnected || r.receivers.size > 0) return false;
+    // Grace period: a brand-new room legitimately has zero players (the
+    // host hasn't finished the Cast handshake + entered their name yet) and
+    // can have zero receivers for a moment (TV reconnecting, e.g. after the
+    // cache-bust redirect). Don't let that normal setup gap destroy the
+    // room out from under an in-progress host join.
+    if (Date.now() - r.engine.room.createdAt < ROOM_EMPTY_GRACE_MS) return false;
+    this.close(code);
+    return true;
   }
 }

@@ -17,17 +17,22 @@
     -->
     <script type="module" src="/src/receiver/main.tsx"></script>
     <script>
-      // Poll /api/cast-room every 2s. When we get a code, redirect with ?code=
-      // in the URL — every version of the receiver React app handles that param.
+      // Poll /api/cast-room every 2s as a fallback in case the Cast
+      // messaging channel / socket push (see main.tsx) never delivers a
+      // code. Redirecting reloads the page (a real socket disconnect for
+      // the TV), so main.tsx clears window.__castPollTimer the moment a
+      // code arrives via any path — don't redirect on top of a session
+      // that's already live, or the reload race can outrun a fresh room
+      // that has no players joined yet.
       (function () {
         var params = new URLSearchParams(window.location.search);
         if (params.get('code')) return; // already have a code, skip polling
-        var interval = setInterval(function () {
+        window.__castPollTimer = setInterval(function () {
           fetch('/api/cast-room', { cache: 'no-store' })
             .then(function (r) { return r.json(); })
             .then(function (d) {
               if (d && d.code) {
-                clearInterval(interval);
+                clearInterval(window.__castPollTimer);
                 var v = params.get('v') || '';
                 window.location.replace('/receiver.html?code=' + d.code + (v ? '&v=' + v : ''));
               }

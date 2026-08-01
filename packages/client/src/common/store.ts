@@ -191,8 +191,18 @@ class GameStore {
 
   async receiverSubscribe(code: string): Promise<boolean> {
     const res = await this.emit('receiver:subscribe', { code });
-    if (res.ok) this.patch({ code });
-    else this.patch({ error: res.error });
+    if (res.ok) {
+      this.patch({ code });
+      // Every code-delivery path (Cast messaging, server push, ?code= in
+      // the URL) converges here. A successful subscribe means the
+      // receiver.html HTTP-polling fallback (see receiver.html) is no
+      // longer needed — stop it so it can't reload the page (a real socket
+      // disconnect) on top of a session that's already live.
+      const pollTimer = (window as unknown as { __castPollTimer?: number }).__castPollTimer;
+      if (pollTimer) clearInterval(pollTimer);
+    } else {
+      this.patch({ error: res.error });
+    }
     return res.ok;
   }
 }
