@@ -5,9 +5,16 @@ import {
   type PublicRoom,
   type PrivateState,
   type TeamId,
+  type ThreePlayerRole,
 } from '@pinpoint/shared';
 import { store } from '../common/store.js';
 import { Board, CategoryTag, Timer, Tokens } from '../common/ui.js';
+
+const THREE_ROLE_LABELS: Record<ThreePlayerRole, string> = {
+  INSIDER: '🕵️ You: Insider',
+  INTERCEPTOR: '🎯 You: Interceptor',
+  CONTACT: '📣 You: Contact',
+};
 
 const nameOf = (pub: PublicRoom, id: string) =>
   pub.players.find((p) => p.id === id)?.displayName ?? '???';
@@ -160,11 +167,12 @@ export function WriteClues({ pub, priv }: { pub: PublicRoom; priv: PrivateState 
 
   if (!amInsider) {
     const pending = pub.round?.insiders.filter((i) => !i.submitted) ?? [];
+    const single = pub.mode === 'THREE_PLAYER';
     return (
       <div className="stack">
-        <PhaseHeader pub={pub} title="Clue writing" />
+        <PhaseHeader pub={pub} priv={priv} title="Clue writing" />
         <div className="card center-text stack">
-          <div className="h2">Insiders are writing clues…</div>
+          <div className="h2">{single ? 'Insider is writing clues…' : 'Insiders are writing clues…'}</div>
           <div className="muted">
             {pending.length
               ? `Waiting for: ${pending.map((i) => nameOf(pub, i.insiderPlayerId)).join(', ')}`
@@ -203,7 +211,7 @@ function InsiderWriter({ pub, priv }: { pub: PublicRoom; priv: PrivateState }) {
 
   return (
     <div className="stack">
-      <PhaseHeader pub={pub} title="Your turn: write clues" />
+      <PhaseHeader pub={pub} priv={priv} title="Your turn: write clues" />
       <div className="card stack">
         <div className="h2">Pick your secret message</div>
         <div className="muted small">Tap one. Your teammates can’t see this screen.</div>
@@ -287,7 +295,7 @@ export function Guessing({ pub, priv }: { pub: PublicRoom; priv: PrivateState })
 
   return (
     <div className="stack">
-      <PhaseHeader pub={pub} title={pub.phase === 'GUESS_FIRST' ? 'Guessing — 1st message' : 'Guessing — 2nd message'} />
+      <PhaseHeader pub={pub} priv={priv} title={pub.phase === 'GUESS_FIRST' ? 'Guessing — 1st message' : 'Guessing — 2nd message'} />
 
       <div className="card stack">
         <div className="spread">
@@ -378,7 +386,7 @@ export function RoundEnd({ pub, priv }: { pub: PublicRoom; priv: PrivateState })
   const self = me(pub, priv);
   return (
     <div className="stack">
-      <PhaseHeader pub={pub} title="Round complete" />
+      <PhaseHeader pub={pub} priv={priv} title="Round complete" />
       <ScoreSummary pub={pub} />
       {self?.isHost ? (
         <button className="primary" onClick={() => store.nextRound()}>
@@ -451,16 +459,28 @@ function ScoreSummary({ pub }: { pub: PublicRoom }) {
 }
 
 // -------------------------------------------------------------- shared bits
-function PhaseHeader({ pub, title }: { pub: PublicRoom; title: string }) {
+function PhaseHeader({
+  pub,
+  priv,
+  title,
+}: {
+  pub: PublicRoom;
+  priv?: PrivateState;
+  title: string;
+}) {
+  const role = pub.mode === 'THREE_PLAYER' ? priv?.threePlayerRole : null;
   return (
     <div className="card spread">
       <div>
         <div className="muted small">Round {pub.round?.roundNumber ?? '–'}</div>
         <div className="h2">{title}</div>
       </div>
-      {pub.timer.enabled && pub.timer.phaseDeadline && (
-        <Timer deadline={pub.timer.phaseDeadline} />
-      )}
+      <div className="stack" style={{ alignItems: 'flex-end', gap: 4 }}>
+        {role && <span className="pill">{THREE_ROLE_LABELS[role]}</span>}
+        {pub.timer.enabled && pub.timer.phaseDeadline && (
+          <Timer deadline={pub.timer.phaseDeadline} />
+        )}
+      </div>
     </div>
   );
 }

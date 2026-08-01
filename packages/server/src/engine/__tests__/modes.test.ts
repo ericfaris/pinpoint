@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { ThreePlayerRole } from '@pinpoint/shared';
 import { addPlayers, checkInvariants, makeEngine } from './harness.js';
+import { toPrivateState } from '../project.js';
 
 function submitAll(engine: ReturnType<typeof makeEngine>['engine']) {
   for (const ins of engine.room.round!.insiders) {
@@ -94,6 +96,62 @@ describe('3-Player Mode scoring & roles (§4.7)', () => {
     }
     expect(engine.room.phase).toBe('GAME_OVER');
     expect(engine.room.winnerPlayerIds.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('3-Player Mode has exactly one Insider per round', () => {
+  it('round.insiders has length 1, never 2, across several rounds', () => {
+    const { engine } = makeEngine(15);
+    const seats = addPlayers(engine, 3);
+    engine.start(seats[0]!.id);
+    for (let round = 0; round < 4; round++) {
+      expect(engine.room.round!.insiders).toHaveLength(1);
+      submitAll(engine);
+      const g = engine.room.round!.activeGuessing!;
+      engine.flip(g.insiderPlayerId, 'A');
+      engine.recordResult(g.insiderPlayerId, 'CORRECT');
+      if (engine.room.phase === 'GAME_OVER') break;
+      expect(engine.room.phase).toBe('ROUND_END');
+      engine.nextRound(seats[0]!.id);
+    }
+  });
+
+  it('each of the 3 players holds exactly one distinct role, every round', () => {
+    const { engine } = makeEngine(16);
+    const seats = addPlayers(engine, 3);
+    engine.start(seats[0]!.id);
+    for (let round = 0; round < 4; round++) {
+      const roles = seats.map((s) => engine.getThreeRole(s.id));
+      // no player is role-less, and the three roles are exactly INSIDER/INTERCEPTOR/CONTACT
+      expect(roles.every((r): r is ThreePlayerRole => r !== null)).toBe(true);
+      expect(new Set(roles).size).toBe(3);
+      expect(new Set(roles)).toEqual(new Set(['INSIDER', 'INTERCEPTOR', 'CONTACT']));
+
+      submitAll(engine);
+      const g = engine.room.round!.activeGuessing!;
+      engine.flip(g.insiderPlayerId, 'A');
+      engine.recordResult(g.insiderPlayerId, 'CORRECT');
+      if (engine.room.phase === 'GAME_OVER') break;
+      engine.nextRound(seats[0]!.id);
+    }
+  });
+
+  it('projects threePlayerRole into each player\'s private state, and null in TEAM mode', () => {
+    const { engine } = makeEngine(17);
+    const seats = addPlayers(engine, 3);
+    engine.start(seats[0]!.id);
+    for (const s of seats) {
+      const priv = toPrivateState(engine, s.id);
+      expect(priv.threePlayerRole).toBe(engine.getThreeRole(s.id));
+      expect(priv.threePlayerRole).not.toBeNull();
+    }
+
+    const { engine: teamEngine } = makeEngine(18);
+    const teamSeats = addPlayers(teamEngine, 4);
+    teamEngine.start(teamSeats[0]!.id);
+    for (const s of teamSeats) {
+      expect(toPrivateState(teamEngine, s.id).threePlayerRole).toBeNull();
+    }
   });
 });
 

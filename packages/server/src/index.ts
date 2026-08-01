@@ -4,7 +4,6 @@ import { createServer } from 'node:http';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
-import 'dotenv/config';
 import express from 'express';
 import { Server } from 'socket.io';
 import { SOCKET_PATH } from '@pinpoint/shared';
@@ -12,6 +11,9 @@ import { CardBuffer } from './ai/buffer.js';
 import { MessageGenerator } from './ai/generator.js';
 import { RoomManager } from './net/rooms.js';
 import { attachSocketServer } from './net/server.js';
+import { loadRootEnv } from './env.js';
+
+loadRootEnv();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
