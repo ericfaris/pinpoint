@@ -5,7 +5,7 @@ in-person "Party Mode"). Players write one-word clues privately on their own
 devices; guessing happens out loud in the room; shared game state is cast to a
 TV via **Google Chromecast**.
 
-> Live: https://games.mooseflip.com
+**Live:** [pinpoint.mooseflip.com](https://pinpoint.mooseflip.com)
 
 ## Architecture
 
@@ -52,7 +52,24 @@ npm run build
 node packages/server/dist/index.js   # serves client + Socket.IO on $PORT
 ```
 
-Or `docker build -t pinpoint . && docker run -p 3001:3001 --env-file .env pinpoint`.
+## Deployment
+
+Pinpoint is self-hosted on a local Docker lab and exposed publicly at
+[pinpoint.mooseflip.com](https://pinpoint.mooseflip.com) via a Cloudflare
+Tunnel. There is no registry push or remote deploy — deploy from the host with
+a local build:
+
+```bash
+docker compose up -d --build
+```
+
+Configuration comes from a local `.env` (gitignored — see `.env.example`),
+supplying `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `PORT`, `CAST_RECEIVER_APP_ID`,
+and `PUBLIC_BASE_URL`. The app's container port `3001` is bound to
+`127.0.0.1:8400` on the host; the Cloudflare Tunnel is the only public entry
+point (no raw port is exposed to the network). In production `PUBLIC_BASE_URL`
+must be `https://pinpoint.mooseflip.com` so the QR join link shown on the TV
+points at the tunnel rather than the dev server.
 
 ## Environment
 

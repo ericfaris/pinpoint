@@ -1,0 +1,32 @@
+# Project name fixes the container name to pinpoint-app-1 regardless of the
+# directory the compose file lives in.
+name: pinpoint
+
+services:
+  app:
+    build: .
+    image: ericfaris/pinpoint:latest
+    restart: unless-stopped
+    # Run as the host user (uid:gid 1000) so nothing runs as root.
+    user: "1000:1000"
+    # Block privilege escalation (setuid binaries can't gain new privs).
+    security_opt:
+      - no-new-privileges:true
+    # Host-side binding stays on 127.0.0.1 — the Cloudflare Tunnel is the only
+    # public entry point. Container listens on 3001 (see Dockerfile / PORT).
+    ports:
+      - "127.0.0.1:8400:3001"
+    environment:
+      # AI message generation — read from .env (falls back to bundled seed
+      # cards if unset).
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # Generation model (default matches .env.example).
+      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
+      # HTTP/WebSocket port inside the container (matches the Dockerfile EXPOSE).
+      - PORT=3001
+      # Google Cast custom receiver app id — read from .env.
+      - CAST_RECEIVER_APP_ID=${CAST_RECEIVER_APP_ID:-}
+      # Base URL used to build the QR join link shown on the TV. Must be the
+      # real public host in production (not the dev-only localhost:5173) so
+      # players scan a QR that points at the tunnel.
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-https://pinpoint.mooseflip.com}
