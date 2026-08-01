@@ -20,11 +20,14 @@ let httpServer: HttpServer;
 let io: Server;
 let port: number;
 
+// Real (short) grace period so tests exercise it without burning 20s each.
+const TEST_DISCONNECT_GRACE_MS = 60;
+
 beforeEach(async () => {
   httpServer = createServer();
   io = new Server(httpServer, { path: SOCKET_PATH });
   const rooms = new RoomManager(new SyntheticCardSource(makeRng(1)));
-  attachSocketServer(io as never, rooms);
+  attachSocketServer(io as never, rooms, { disconnectGraceMs: TEST_DISCONNECT_GRACE_MS });
   await new Promise<void>((resolve) => httpServer.listen(0, resolve));
   port = (httpServer.address() as { port: number }).port;
 });
@@ -62,6 +65,8 @@ class Client {
 }
 
 const tick = () => new Promise((r) => setTimeout(r, 30));
+/** Past TEST_DISCONNECT_GRACE_MS, so any pending grace-period pause has fired. */
+const pastGraceWindow = () => new Promise((r) => setTimeout(r, TEST_DISCONNECT_GRACE_MS + 40));
 
 describe('full game over WebSockets', () => {
   it('plays a 4-player TEAM game to a winner', async () => {
@@ -198,7 +203,7 @@ describe('full game over WebSockets', () => {
     const victim = clients[0]!;
     const token = victim.token;
     victim.close();
-    await tick();
+    await pastGraceWindow(); // past the grace period, so the drop is now a real pause
     expect(host.pub?.phase).toBe('PAUSED');
 
     const rejoin = new Client();
@@ -207,6 +212,50 @@ describe('full game over WebSockets', () => {
     expect(rr.ok).toBe(true);
     await tick();
     expect(host.pub?.phase).toBe('WRITE_CLUES');
+
+    host.close();
+    for (const c of clients.slice(1)) c.close();
+    rejoin.close();
+  }, 20000);
+
+  it('does not pause if a dropped player reconnects within the grace window', async () => {
+    // Regression: a backgrounded tab / brief network blip shouldn't
+    // visibly pause the game for everyone else, only a drop that outlasts
+    // DISCONNECT_GRACE_MS should.
+    const host = new Client();
+    await host.connected();
+    const created = await host.emit<{ code: string }>('host:create', { canCast: true });
+    const code = created.ok ? created.data.code : '';
+    host.socket.emit('host:castStatus', { connected: true });
+    await host.emit('room:join', { code, displayName: 'Host', canCast: true });
+    const clients: Client[] = [];
+    for (let i = 1; i < 4; i++) {
+      const c = new Client();
+      await c.connected();
+      const r = await c.emit<{ playerId: string; reconnectToken: string }>('room:join', {
+        code,
+        displayName: `P${i}`,
+      });
+      if (r.ok) c.token = r.data.reconnectToken;
+      clients.push(c);
+    }
+    await host.emit('lobby:start', {});
+    await tick();
+    expect(host.pub?.phase).toBe('WRITE_CLUES');
+
+    const victim = clients[0]!;
+    const token = victim.token;
+    victim.close();
+    await tick(); // well within TEST_DISCONNECT_GRACE_MS (60ms)
+    expect(host.pub?.phase).toBe('WRITE_CLUES'); // not paused yet — grace window still open
+
+    const rejoin = new Client();
+    await rejoin.connected();
+    const rr = await rejoin.emit('room:join', { code, displayName: 'P1', reconnectToken: token });
+    expect(rr.ok).toBe(true);
+
+    await pastGraceWindow(); // if the timer weren't cancelled, it would fire around here
+    expect(host.pub?.phase).toBe('WRITE_CLUES'); // still never paused
 
     host.close();
     for (const c of clients.slice(1)) c.close();

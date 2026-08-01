@@ -73,6 +73,15 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
   path: SOCKET_PATH,
   cors: { origin: true, credentials: true },
+  // Mobile browsers throttle JS timers in backgrounded tabs, which starves
+  // the Socket.IO heartbeat well before the player actually left. Default
+  // (25s interval / 20s timeout, ~45s combined) is too tight for someone
+  // who just tabbed away for a minute — give it real slack so that doesn't
+  // read as a disconnect at all. (See net/server.ts
+  // DEFAULT_DISCONNECT_GRACE_MS for the second layer: even a real detected
+  // disconnect gets a grace window before it actually pauses the game.)
+  pingInterval: 25_000,
+  pingTimeout: 60_000,
 });
 
 attachSocketServer(io, rooms);

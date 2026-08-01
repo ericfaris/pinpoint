@@ -22,7 +22,19 @@ interface SocketData {
 const okAck = <T>(data: T): Ack<T> => ({ ok: true, data });
 const errAck = (error: string): Ack<never> => ({ ok: false, error });
 
-export function attachSocketServer(io: IO, rooms: RoomManager): void {
+// How long a disconnected player gets before it actually pauses the game.
+// A background tab / brief network drop looks identical to a real
+// disconnect at the socket level; assume it's temporary and stay silent
+// about it unless it outlasts this window. Overridable so tests don't have
+// to burn 20 real seconds to exercise this path.
+const DEFAULT_DISCONNECT_GRACE_MS = 20_000;
+
+export function attachSocketServer(
+  io: IO,
+  rooms: RoomManager,
+  opts: { disconnectGraceMs?: number } = {},
+): void {
+  const disconnectGraceMs = opts.disconnectGraceMs ?? DEFAULT_DISCONNECT_GRACE_MS;
   const data = (s: Sock) => s.data as SocketData;
   const standbyReceivers = new Set<string>(); // socketIds waiting for a room code
 
@@ -115,6 +127,13 @@ export function attachSocketServer(io: IO, rooms: RoomManager): void {
       if (!runtime) return ack(errAck('Room not found.'));
       const res = runtime.engine.join({ displayName, reconnectToken, canCast });
       if (!res.ok) return ack(errAck(res.error));
+      // They're back — whether or not the grace-period pause below ever
+      // actually fired, don't let a stale delayed pause land on top of them.
+      const pendingGrace = runtime.disconnectGraceTimers.get(res.player.id);
+      if (pendingGrace) {
+        clearTimeout(pendingGrace);
+        runtime.disconnectGraceTimers.delete(res.player.id);
+      }
       data(socket).code = code;
       data(socket).playerId = res.player.id;
       runtime.sockets.set(socket.id, res.player.id);
@@ -246,16 +265,35 @@ export function attachSocketServer(io: IO, rooms: RoomManager): void {
         runtime.receivers.delete(socket.id);
         console.log(`[receiver] disconnected from ${code} (${runtime.receivers.size} receivers left)`);
         if (runtime.receivers.size === 0) runtime.engine.setCastConnected(false);
-      } else {
-        const playerId = runtime.sockets.get(socket.id);
-        runtime.sockets.delete(socket.id);
-        if (playerId) runtime.engine.disconnect(playerId);
+        if (rooms.closeIfEmpty(code)) {
+          console.log(`[room] ${code} closed (empty)`);
+        } else {
+          broadcast(runtime);
+        }
+        return;
       }
-      if (rooms.closeIfEmpty(code)) {
-        console.log(`[room] ${code} closed (empty)`);
-      } else {
-        broadcast(runtime);
-      }
+
+      const playerId = runtime.sockets.get(socket.id);
+      runtime.sockets.delete(socket.id);
+      if (!playerId) return;
+
+      // Don't pause the game the instant a socket drops — a backgrounded
+      // tab or brief network blip looks identical to a real disconnect at
+      // this level. Give them a window to reconnect silently (room:join
+      // cancels this timer) before actually marking them disconnected.
+      const existingGrace = runtime.disconnectGraceTimers.get(playerId);
+      if (existingGrace) clearTimeout(existingGrace);
+      const graceTimer = setTimeout(() => {
+        runtime.disconnectGraceTimers.delete(playerId);
+        if (rooms.get(code) !== runtime) return; // room was replaced/closed meanwhile
+        runtime.engine.disconnect(playerId);
+        if (rooms.closeIfEmpty(code)) {
+          console.log(`[room] ${code} closed (empty)`);
+        } else {
+          broadcast(runtime);
+        }
+      }, disconnectGraceMs);
+      runtime.disconnectGraceTimers.set(playerId, graceTimer);
     });
   });
 }

@@ -12,6 +12,8 @@ export interface RoomRuntime {
   receivers: Set<string>;
   /** active phase timer handle */
   timer: NodeJS.Timeout | null;
+  /** playerId -> pending "actually pause the game" timer (see server.ts DISCONNECT_GRACE_MS) */
+  disconnectGraceTimers: Map<string, NodeJS.Timeout>;
 }
 
 /** How long a just-created room is protected from closeIfEmpty (§4.1.2). */
@@ -63,6 +65,7 @@ export class RoomManager {
       sockets: new Map(),
       receivers: new Set(),
       timer: null,
+      disconnectGraceTimers: new Map(),
     };
     this.rooms.set(code, runtime);
     return runtime;
@@ -71,6 +74,7 @@ export class RoomManager {
   close(code: string): void {
     const r = this.rooms.get(code);
     if (r?.timer) clearTimeout(r.timer);
+    for (const t of r?.disconnectGraceTimers.values() ?? []) clearTimeout(t);
     this.rooms.delete(code);
   }
 
