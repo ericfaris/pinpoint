@@ -31,6 +31,9 @@ const LS_NAME = 'tri:name';
 class GameStore {
   private socket: Socket;
   private listeners = new Set<Listener>();
+  /** Set once the transport has connected at least once, so we can tell a
+   * fresh connect apart from a reconnect after a drop. */
+  private hasConnectedBefore = false;
   state: GameState = {
     connected: false,
     pub: null,
@@ -42,7 +45,27 @@ class GameStore {
 
   constructor() {
     this.socket = io({ path: SOCKET_PATH, autoConnect: true });
-    this.socket.on('connect', () => this.patch({ connected: true }));
+    this.socket.on('connect', () => {
+      const isReconnect = this.hasConnectedBefore;
+      this.hasConnectedBefore = true;
+      this.patch({ connected: true });
+      // socket.io transparently reconnects the transport, but that doesn't
+      // re-run room:join / receiver:subscribe server-side — the server has
+      // no idea this new connection belongs to the room it just dropped
+      // from. Without this, a player who was disconnected mid-game (screen
+      // lock, backgrounded tab, brief WiFi drop) stays marked disconnected
+      // and the game stays PAUSED even after their device is back online,
+      // with nothing on screen telling them to do anything. Re-establish
+      // membership ourselves using what got us here the first time.
+      if (!isReconnect) return;
+      if (this.state.priv?.playerId) {
+        const code = this.savedCode();
+        const name = this.savedName();
+        if (code && name) void this.join(code, name);
+      } else if (this.state.code) {
+        void this.receiverSubscribe(this.state.code);
+      }
+    });
     this.socket.on('disconnect', () => this.patch({ connected: false }));
     this.socket.on('room:state', (pub: PublicRoom) =>
       this.patch({ pub, serverOffset: Date.now() - pub.serverNow }),
