@@ -63,30 +63,28 @@ export function Board({
   onFlip?: (slot: BoardSlot) => void;
   flippable?: boolean;
 }) {
-  const cls = board.faceUp ? 'up' : 'down';
-  if (board.faceUp) {
-    return (
-      <div className={`board ${cls}`}>
-        <div>
-          <div className="muted small">Board {board.slot}</div>
-          <div className="word">{board.clue || '—'}</div>
-        </div>
+  // Both faces are always in the DOM; the wrapper rotates in 3D and each
+  // face's backface-visibility:hidden (styles.css) hides whichever one is
+  // turned away, producing a card-flip instead of an instant swap.
+  const inner = (
+    <div className={`board-inner${board.faceUp ? ' flipped' : ''}`}>
+      <div className="board-face down">
+        <div className="muted small">Board {board.slot}</div>
+        {flippable && <div>Tap to flip</div>}
       </div>
-    );
-  }
-  if (flippable && onFlip) {
+      <div className="board-face up">
+        <div className="muted small">Board {board.slot}</div>
+        <div className="word">{board.clue || '—'}</div>
+      </div>
+    </div>
+  );
+
+  if (!board.faceUp && flippable && onFlip) {
     return (
-      <button className={`board ${cls}`} onClick={() => onFlip(board.slot)}>
-        <div>
-          <div className="muted small">Board {board.slot}</div>
-          <div>Tap to flip</div>
-        </div>
+      <button className="board clickable" onClick={() => onFlip(board.slot)}>
+        {inner}
       </button>
     );
   }
-  return (
-    <div className={`board ${cls}`}>
-      <div className="muted">Board {board.slot}</div>
-    </div>
-  );
+  return <div className="board">{inner}</div>;
 }
