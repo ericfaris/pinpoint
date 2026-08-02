@@ -25,9 +25,11 @@ const errAck = (error: string): Ack<never> => ({ ok: false, error });
 // How long a disconnected player gets before it actually pauses the game.
 // A background tab / brief network drop looks identical to a real
 // disconnect at the socket level; assume it's temporary and stay silent
-// about it unless it outlasts this window. Overridable so tests don't have
-// to burn 20 real seconds to exercise this path.
-const DEFAULT_DISCONNECT_GRACE_MS = 20_000;
+// about it unless it outlasts this window. Combined with the ~60s Socket.IO
+// pingTimeout (index.ts) before a drop even registers, that's a ~2min
+// total tolerance for a player to wander off and come back unnoticed.
+// Overridable so tests don't have to burn real seconds to exercise this path.
+const DEFAULT_DISCONNECT_GRACE_MS = 60_000;
 
 export function attachSocketServer(
   io: IO,
