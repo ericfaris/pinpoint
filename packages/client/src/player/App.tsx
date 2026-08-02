@@ -10,6 +10,18 @@ type View = 'landing' | 'host' | 'join';
 interface Config {
   castReceiverAppId: string;
   publicBaseUrl: string;
+  appVersion: string;
+}
+
+/** Small, unobtrusive corner tag so a host can tell at a glance which build
+ * is live — deploys wipe in-memory rooms with no other visible record. */
+function VersionTag({ version }: { version?: string }) {
+  if (!version) return null;
+  return (
+    <div className="muted" style={{ position: 'fixed', bottom: 6, right: 10, fontSize: '0.7rem', opacity: 0.6 }}>
+      v{version}
+    </div>
+  );
 }
 
 export default function App() {
@@ -22,7 +34,7 @@ export default function App() {
     fetch('/api/config')
       .then((r) => r.json())
       .then(setConfig)
-      .catch(() => setConfig({ castReceiverAppId: '', publicBaseUrl: window.location.origin }));
+      .catch(() => setConfig({ castReceiverAppId: '', publicBaseUrl: window.location.origin, appVersion: '' }));
   }, []);
 
   // deep-link join: /join?code=1234 or ?code=1234
@@ -34,7 +46,14 @@ export default function App() {
 
   const joined = !!g.priv?.playerId && !!g.pub;
 
-  if (joined) return <InGame />;
+  if (joined) {
+    return (
+      <>
+        <InGame />
+        <VersionTag version={config?.appVersion} />
+      </>
+    );
+  }
 
   return (
     <div className="app center">
@@ -50,6 +69,7 @@ export default function App() {
         )}
         {view === 'join' && <JoinFlow onBack={() => setView('landing')} />}
       </div>
+      <VersionTag version={config?.appVersion} />
     </div>
   );
 }

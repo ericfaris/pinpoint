@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import QRCode from 'qrcode';
 import type { PublicRoom, TeamId } from '@pinpoint/shared';
 import { useGame } from '../common/useGame.js';
@@ -9,15 +9,30 @@ const teamClass = (t: TeamId) => (t === 'A' ? 'teamA' : 'teamB');
 const nameOf = (pub: PublicRoom, id: string) =>
   pub.players.find((p) => p.id === id)?.displayName ?? '???';
 
+/** Small, unobtrusive corner tag so a host can tell at a glance which build
+ * is live on the TV — deploys wipe in-memory rooms with no other visible record. */
+function VersionTag({ version }: { version: string }) {
+  if (!version) return null;
+  return (
+    <div className="muted" style={{ position: 'fixed', bottom: '1vh', right: '1vw', fontSize: '1vw', opacity: 0.5 }}>
+      v{version}
+    </div>
+  );
+}
+
 export default function App() {
   const g = useGame();
   const [baseUrl, setBaseUrl] = useState(window.location.origin);
+  const [appVersion, setAppVersion] = useState('');
 
   // Resolve base URL for QR codes; Cast and ?code= handled in main.tsx.
   useEffect(() => {
     fetch('/api/config')
       .then((r) => r.json())
-      .then((c) => c.publicBaseUrl && setBaseUrl(c.publicBaseUrl))
+      .then((c) => {
+        if (c.publicBaseUrl) setBaseUrl(c.publicBaseUrl);
+        if (c.appVersion) setAppVersion(c.appVersion);
+      })
       .catch(() => undefined);
 
     const params = new URLSearchParams(window.location.search);
@@ -25,9 +40,10 @@ export default function App() {
     if (fromQuery) void store.receiverSubscribe(fromQuery);
   }, []);
 
+  let content: ReactNode;
   if (!g.pub) {
     const castError = (window as any).__castInitError as string | null;
-    return (
+    content = (
       <div className="tv center">
         <div className="brand">PINPOINT</div>
         <div className="muted">Waiting for a room…</div>
@@ -38,12 +54,20 @@ export default function App() {
         )}
       </div>
     );
+  } else if (g.pub.phase === 'LOBBY') {
+    content = <LobbyTV pub={g.pub} baseUrl={baseUrl} />;
+  } else if (g.pub.phase === 'PAUSED') {
+    content = <PausedTV pub={g.pub} />;
+  } else {
+    content = <GameTV pub={g.pub} />;
   }
 
-  const pub = g.pub;
-  if (pub.phase === 'LOBBY') return <LobbyTV pub={pub} baseUrl={baseUrl} />;
-  if (pub.phase === 'PAUSED') return <PausedTV pub={pub} />;
-  return <GameTV pub={pub} />;
+  return (
+    <>
+      {content}
+      <VersionTag version={appVersion} />
+    </>
+  );
 }
 
 function LobbyTV({ pub, baseUrl }: { pub: PublicRoom; baseUrl: string }) {

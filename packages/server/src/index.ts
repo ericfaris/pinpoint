@@ -11,11 +11,12 @@ import { CardBuffer } from './ai/buffer.js';
 import { MessageGenerator } from './ai/generator.js';
 import { RoomManager } from './net/rooms.js';
 import { attachSocketServer } from './net/server.js';
-import { loadRootEnv } from './env.js';
+import { loadRootEnv, readAppVersion } from './env.js';
 
 loadRootEnv();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const APP_VERSION = readAppVersion();
 
 const PORT = Number(process.env.PORT ?? 3001);
 const CAST_RECEIVER_APP_ID = process.env.CAST_RECEIVER_APP_ID ?? '';
@@ -36,10 +37,14 @@ const rooms = new RoomManager(cardBuffer);
 // --- HTTP + static client ---
 const app = express();
 app.get('/api/config', (_req, res) => {
-  res.json({ castReceiverAppId: CAST_RECEIVER_APP_ID, publicBaseUrl: PUBLIC_BASE_URL });
+  res.json({
+    castReceiverAppId: CAST_RECEIVER_APP_ID,
+    publicBaseUrl: PUBLIC_BASE_URL,
+    appVersion: APP_VERSION,
+  });
 });
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, rooms: rooms.all().length, pools: cardBuffer.stats() });
+  res.json({ ok: true, version: APP_VERSION, rooms: rooms.all().length, pools: cardBuffer.stats() });
 });
 app.get('/api/cast-room', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -87,7 +92,7 @@ const io = new Server(httpServer, {
 attachSocketServer(io, rooms);
 
 httpServer.listen(PORT, () => {
-  console.log(`[startup] Pinpoint server on :${PORT} (socket ${SOCKET_PATH})`);
+  console.log(`[startup] Pinpoint v${APP_VERSION} on :${PORT} (socket ${SOCKET_PATH})`);
   // Pre-warm card pools in the background (non-blocking).
   void cardBuffer.warmup().then(() => {
     console.log('[startup] card pools warmed:', cardBuffer.stats());
