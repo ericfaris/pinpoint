@@ -12,7 +12,7 @@ export function Tokens({ count, big }: { count: number; big?: boolean }) {
   return (
     <span className={`tokens${big ? ' bigtokens' : ''}`}>
       {Array.from({ length: TOKENS_TO_WIN }).map((_, i) => (
-        <span key={i} className={`token${i < count ? ' on' : ''}`} />
+        <span key={i} className={`token${i < count ? ' on' : ''}`}>★</span>
       ))}
     </span>
   );
