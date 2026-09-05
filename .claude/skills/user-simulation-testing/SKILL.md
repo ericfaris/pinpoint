@@ -84,7 +84,66 @@ Pinpoint's own suite is the reference example:
    - the two extremes of whatever randomness drives outcomes (always-succeed,
      always-fail) to make sure both terminate
 
-3. **Drive it for real, assert on real state.** Boot the actual server
+   **Don't stop at session lifecycle — play the actual game.** It's easy for
+   the whole batch to drive gameplay through placeholder content (the same
+   fixed clue word every time, always picking option 0, always guessing
+   correct) because that's what makes a scripted driver simple. That
+   completely misses bugs that only live in the rule-enforcement and
+   resource-supply layers underneath the session plumbing:
+   - **Content the rules should reject but the server might not**: an
+     empty/blank submission where one action, another value where it's
+     disallowed, input that's supposed to be constrained (one word, a
+     bounded range, a required prior choice) but isn't actually validated
+     server-side — client-side hints (a placeholder, a maxlength) are not
+     enforcement. Try to submit exactly what the client's own UI copy tells
+     the user *not* to.
+   - **Resource/supply exhaustion**: anything the game deals out — content
+     from a generator or pool, a shuffled deck, an external API call — has a
+     "we're out" case. Simulate it running dry *mid-session* (not just at
+     start) with a stub/fake supplying the real dependency, and confirm the
+     failure is a normal, surfaced, retriable error — not a thrown exception.
+     A throw with nothing above it to catch it inside a long-running
+     socket/event server doesn't just fail that one action, it can crash the
+     process for every concurrent session (grep for `throw new Error` in the
+     core state machine and ask, for each one, "what catches this, and does
+     that failure stay scoped to the one session that hit it?").
+   - **Score/outcome correctness under real content**: drive at least one
+     full game through with varied real inputs (not the same fixed value
+     every round) and assert the final score/outcome by recomputing it
+     independently from the sequence of actions taken, not just "the phase
+     reached GAME_OVER."
+   - **Feedback-only / fire-and-forget actions**: any action whose whole
+     point is to leave a signal for someone else (a report/flag button, a
+     "notify the host" action, an analytics ping) is easy to wire server-side
+     and then forget to give the *acting user* any visible confirmation.
+     Check that every such action produces some observable effect for the
+     person who took it, not just a server-side log line.
+
+3. **Audit whether the game's own instructions are clear, not just whether it
+   works.** A feature that behaves correctly but gives a real user no way to
+   tell it happened is a bug even when every assertion in your test suite
+   passes. While you're driving each scenario, read the actual on-screen copy
+   the way a first-time player would and check for:
+   - an action with **zero visible feedback** (nothing changes on screen,
+     no toast/confirmation) — the flag/report pattern above is the classic
+     case, but check every fire-and-forget button
+   - an error message that's technically correct but not something a
+     non-technical player would know what to do with (compare what the
+     server returns vs. what's shown — is a raw internal message leaking to
+     the UI?)
+   - a state a player can get stuck in with no on-screen indication of what
+     to do next (this is exactly what the "permanent disconnect" scenario in
+     step 2 is designed to surface — check that the *recovery path*, once
+     you build/find one, is something a host would actually discover without
+     reading the source)
+   Findings here are real bugs — file and treat them the same as a logic
+   bug — but when the "correct" behavior is a game-rule/design judgment call
+   (e.g., should free-text input be more strictly validated, changing what
+   a player is and isn't allowed to type) rather than an obvious defect,
+   surface it as a finding for the user to decide rather than unilaterally
+   changing game rules.
+
+4. **Drive it for real, assert on real state.** Boot the actual server
    in-process (ephemeral port), connect real client sockets/HTTP clients, and
    drive every action through the real API — never call internal engine
    methods directly except to run the invariant checker or inspect state the
@@ -92,7 +151,7 @@ Pinpoint's own suite is the reference example:
    real transport (timing, serialization, ack flow) is exactly what this
    layer is for.
 
-4. **When a test fails, determine test-bug vs. product-bug before touching
+5. **When a test fails, determine test-bug vs. product-bug before touching
    product code.** Read the failure against the actual source of the feature
    it exercises. Common test-harness mistakes to rule out first: awaiting an
    ack on a fire-and-forget event (hangs to timeout), holding a stale client
@@ -101,13 +160,13 @@ Pinpoint's own suite is the reference example:
    available. Only once you've confirmed the server did something the spec/
    design doesn't intend is it a real bug.
 
-5. **File one issue per confirmed bug** (use the `create-issue` skill or
+6. **File one issue per confirmed bug** (use the `create-issue` skill or
    `gh issue create` directly) before fixing, with: what happens, the
    scenario that found it (name the test), user impact in concrete terms, and
    root cause once known. This creates a paper trail independent of the fix
    commit and gives you an issue number to close.
 
-6. **Fix minimally and re-verify.**
+7. **Fix minimally and re-verify.**
    - Fix the root cause in the smallest surface area — don't refactor
      adjacent code while you're in there.
    - If the bug has a user-facing surface (a missing recovery action, a
@@ -123,13 +182,13 @@ Pinpoint's own suite is the reference example:
      cross-package (a shared protocol package needs rebuilding before a
      server package will typecheck against it).
 
-7. **Land the batch as one changeset**: the new test suite plus every fix it
+8. **Land the batch as one changeset**: the new test suite plus every fix it
    motivated, referencing the filed issues (`Fixes #N`) so they auto-close on
    merge. Branch off the default branch first if working directly in it engine
    isn't already routed through a PR-based flow; open a PR with a summary of
    bugs found/fixed and the verification that was run.
 
-8. **Leave the suite behind.** The batch of simulated games is a regression
+9. **Leave the suite behind.** The batch of simulated games is a regression
    suite now, not a one-off script — it belongs in the same test directory
    and `npm test`/CI path as everything else, not in a scratch file that gets
    deleted after this session.
