@@ -15,6 +15,20 @@ import { loadRootEnv, readAppVersion } from './env.js';
 
 loadRootEnv();
 
+// Last-resort safety net: every socket event and timer callback in
+// net/server.ts already catches its own exceptions (a single room's bug
+// must never take down every other concurrent game), but this is the
+// backstop for anywhere that guard was missed. Node's default behavior for
+// an uncaught exception is to terminate the process — for a long-running
+// multi-room game server that means one bad room ends everyone else's game
+// too. Log and keep running instead.
+process.on('uncaughtException', (err) => {
+  console.error('[fatal] uncaughtException (server staying up):', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[fatal] unhandledRejection (server staying up):', reason);
+});
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const APP_VERSION = readAppVersion();
 

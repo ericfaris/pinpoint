@@ -67,9 +67,13 @@ export function attachSocketServer(
     if (room.phase === 'WRITE_CLUES' && room.timer.phaseDeadline) {
       const delay = Math.max(0, room.timer.phaseDeadline - Date.now());
       runtime.timer = setTimeout(() => {
-        runtime.timer = null;
-        const res = runtime.engine.clueTimerExpired();
-        if (res.ok) broadcast(runtime);
+        try {
+          runtime.timer = null;
+          const res = runtime.engine.clueTimerExpired();
+          if (res.ok) broadcast(runtime);
+        } catch (e) {
+          console.error('[timer] clueTimerExpired threw:', e);
+        }
       }, delay + 20);
     }
   }
@@ -80,8 +84,35 @@ export function attachSocketServer(
   }
 
   io.on('connection', (socket: Sock) => {
+    // Every intent handler below is wrapped so a thrown exception —
+    // whether from a bug we haven't found yet, or a well-understood failure
+    // mode like the card source running dry — turns into an error reply (or
+    // is just logged, for fire-and-forget events) instead of propagating out
+    // of a Socket.IO event dispatch and crashing the whole process. A single
+    // room's bad luck must never take down every other concurrent game.
+    const rawOn = socket.on.bind(socket);
+    const on = <E extends keyof ClientToServer>(event: E, handler: ClientToServer[E]): void => {
+      rawOn(event, ((...args: unknown[]) => {
+        try {
+          (handler as (...a: unknown[]) => void)(...args);
+        } catch (e) {
+          console.error(`[socket] ${String(event)} handler threw:`, e);
+          const maybeAck = args[args.length - 1];
+          if (typeof maybeAck === 'function') {
+            try {
+              (maybeAck as (r: Ack<never>) => void)(errAck('Something went wrong. Please try again.'));
+            } catch {
+              /* client already gone */
+            }
+          } else {
+            socket.emit('error', { message: 'Something went wrong. Please try again.' });
+          }
+        }
+      }) as never);
+    };
+
     // ---- Host creates a room (cast handshake happens client-side first) ----
-    socket.on('host:create', (payload, ack) => {
+    on('host:create', (payload, ack) => {
       try {
         const runtime = rooms.create();
         const code = runtime.engine.room.code;
@@ -100,7 +131,7 @@ export function attachSocketServer(
       }
     });
 
-    socket.on('host:castStatus', ({ connected }) => {
+    on('host:castStatus', ({ connected }) => {
       const runtime = runtimeForSocket(socket);
       if (!runtime) return;
       runtime.engine.setCastConnected(connected);
@@ -114,7 +145,7 @@ export function attachSocketServer(
       broadcast(runtime);
     });
 
-    socket.on('receiver:standby', () => {
+    on('receiver:standby', () => {
       const code = rooms.getPendingCastCode();
       if (code) {
         io.to(socket.id).emit('cast:roomCode', { code });
@@ -124,7 +155,7 @@ export function attachSocketServer(
     });
 
     // ---- Join (lobby or mid-game; reconnect via token) ----
-    socket.on('room:join', ({ code, displayName, reconnectToken, canCast }, ack) => {
+    on('room:join', ({ code, displayName, reconnectToken, canCast }, ack) => {
       const runtime = rooms.get(code);
       if (!runtime) return ack(errAck('Room not found.'));
       const res = runtime.engine.join({ displayName, reconnectToken, canCast });
@@ -145,7 +176,7 @@ export function attachSocketServer(
     });
 
     // ---- TV receiver subscribes read-only ----
-    socket.on('receiver:subscribe', ({ code }, ack) => {
+    on('receiver:subscribe', ({ code }, ack) => {
       const runtime = rooms.get(code);
       if (!runtime) {
         console.log(`[receiver] subscribe to ${code} failed: room not found`);
@@ -171,13 +202,13 @@ export function attachSocketServer(
       }
     };
 
-    socket.on('lobby:assignTeam', ({ playerId, teamId }) => {
+    on('lobby:assignTeam', ({ playerId, teamId }) => {
       withRuntimeHost((rt, hostId) => rt.engine.assignTeam(hostId, playerId, teamId));
     });
-    socket.on('lobby:settings', (patch) => {
+    on('lobby:settings', (patch) => {
       withRuntimeHost((rt, hostId) => rt.engine.updateSettings(hostId, patch));
     });
-    socket.on('lobby:start', (_payload, ack) => {
+    on('lobby:start', (_payload, ack) => {
       const runtime = runtimeForSocket(socket);
       const playerId = data(socket).playerId;
       if (!runtime || !playerId) return ack(errAck('Not in a room.'));
@@ -188,13 +219,13 @@ export function attachSocketServer(
     });
 
     // ---- Clue writing ----
-    socket.on('clues:choose', ({ optionIndex }) => {
+    on('clues:choose', ({ optionIndex }) => {
       withRuntimeHost((rt, pid) => rt.engine.chooseOption(pid, optionIndex));
     });
-    socket.on('clues:setClue', ({ slot, clue }) => {
+    on('clues:setClue', ({ slot, clue }) => {
       withRuntimeHost((rt, pid) => rt.engine.setClue(pid, slot, clue));
     });
-    socket.on('clues:submit', (_payload, ack) => {
+    on('clues:submit', (_payload, ack) => {
       const runtime = runtimeForSocket(socket);
       const pid = data(socket).playerId;
       if (!runtime || !pid) return ack(errAck('Not in a room.'));
@@ -205,7 +236,7 @@ export function attachSocketServer(
     });
 
     // ---- Guessing ----
-    socket.on('guess:flip', ({ slot }, ack) => {
+    on('guess:flip', ({ slot }, ack) => {
       const runtime = runtimeForSocket(socket);
       const pid = data(socket).playerId;
       if (!runtime || !pid) return ack(errAck('Not in a room.'));
@@ -214,7 +245,7 @@ export function attachSocketServer(
       ack(okAck({}));
       broadcast(runtime);
     });
-    socket.on('guess:result', ({ result }, ack) => {
+    on('guess:result', ({ result }, ack) => {
       const runtime = runtimeForSocket(socket);
       const pid = data(socket).playerId;
       if (!runtime || !pid) return ack(errAck('Not in a room.'));
@@ -225,7 +256,7 @@ export function attachSocketServer(
     });
 
     // ---- Round / host powers ----
-    socket.on('round:next', (_payload, ack) => {
+    on('round:next', (_payload, ack) => {
       const runtime = runtimeForSocket(socket);
       const pid = data(socket).playerId;
       if (!runtime || !pid) return ack(errAck('Not in a room.'));
@@ -234,7 +265,7 @@ export function attachSocketServer(
       ack(okAck({}));
       broadcast(runtime);
     });
-    socket.on('card:flag', () => {
+    on('card:flag', () => {
       const runtime = runtimeForSocket(socket);
       const pid = data(socket).playerId;
       if (!runtime || !pid) return;
@@ -243,10 +274,10 @@ export function attachSocketServer(
         console.log(`[flag] room ${runtime.engine.room.code}:`, flagged.option);
       }
     });
-    socket.on('host:forceEnd', () => {
+    on('host:forceEnd', () => {
       withRuntimeHost((rt, hostId) => rt.engine.forceEnd(hostId));
     });
-    socket.on('host:rematch', (_payload, ack) => {
+    on('host:rematch', (_payload, ack) => {
       const runtime = runtimeForSocket(socket);
       const pid = data(socket).playerId;
       if (!runtime || !pid) return ack(errAck('Not in a room.'));
@@ -255,7 +286,7 @@ export function attachSocketServer(
       ack(okAck({}));
       broadcast(runtime);
     });
-    socket.on('host:removePlayer', ({ playerId }, ack) => {
+    on('host:removePlayer', ({ playerId }, ack) => {
       const runtime = runtimeForSocket(socket);
       const pid = data(socket).playerId;
       if (!runtime || !pid) return ack(errAck('Not in a room.'));
@@ -269,7 +300,21 @@ export function attachSocketServer(
     });
 
     // ---- Disconnect ----
+    // Not a ClientToServer intent (it's a reserved Socket.IO event), so it's
+    // outside the `on()` wrapper above — and its own body, plus the deferred
+    // grace-period timer below, run with no ack to reply to. Guard both by
+    // hand so an unexpected throw here (or in the timer callback, which runs
+    // completely outside any Socket.IO dispatch and would otherwise crash
+    // the process just as readily) is logged instead of fatal.
     socket.on('disconnect', () => {
+      try {
+        handleDisconnect();
+      } catch (e) {
+        console.error('[socket] disconnect handler threw:', e);
+      }
+    });
+
+    function handleDisconnect(): void {
       standbyReceivers.delete(socket.id);
       const code = data(socket).code;
       if (!code) return;
@@ -298,17 +343,21 @@ export function attachSocketServer(
       const existingGrace = runtime.disconnectGraceTimers.get(playerId);
       if (existingGrace) clearTimeout(existingGrace);
       const graceTimer = setTimeout(() => {
-        runtime.disconnectGraceTimers.delete(playerId);
-        if (rooms.get(code) !== runtime) return; // room was replaced/closed meanwhile
-        runtime.engine.disconnect(playerId);
-        if (rooms.closeIfEmpty(code)) {
-          console.log(`[room] ${code} closed (empty)`);
-        } else {
-          broadcast(runtime);
+        try {
+          runtime.disconnectGraceTimers.delete(playerId);
+          if (rooms.get(code) !== runtime) return; // room was replaced/closed meanwhile
+          runtime.engine.disconnect(playerId);
+          if (rooms.closeIfEmpty(code)) {
+            console.log(`[room] ${code} closed (empty)`);
+          } else {
+            broadcast(runtime);
+          }
+        } catch (e) {
+          console.error('[socket] disconnect grace-timer callback threw:', e);
         }
       }, disconnectGraceMs);
       runtime.disconnectGraceTimers.set(playerId, graceTimer);
-    });
+    }
   });
 }
 
