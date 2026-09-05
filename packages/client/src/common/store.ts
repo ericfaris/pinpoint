@@ -206,6 +206,13 @@ class GameStore {
     if (!res.ok) this.patch({ error: res.error });
     return res.ok;
   }
+  /** Host-only: permanently remove a player who's gone for good, so a game
+   * paused waiting on them isn't stuck forever. */
+  async removePlayer(playerId: string): Promise<boolean> {
+    const res = await this.emit('host:removePlayer', { playerId });
+    if (!res.ok) this.patch({ error: res.error });
+    return res.ok;
+  }
 
   // ---- receiver ----
   receiverStandby() {

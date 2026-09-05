@@ -485,9 +485,14 @@ function PhaseHeader({
   );
 }
 
-export function Paused({ pub }: { pub: PublicRoom }) {
+export function Paused({ pub, priv }: { pub: PublicRoom; priv: PrivateState }) {
+  const self = me(pub, priv);
+  const isHost = !!self?.isHost;
   const reason = pub.pause.reason;
-  const who = pub.pause.waitingForPlayerId ? nameOf(pub, pub.pause.waitingForPlayerId) : null;
+  const waitingId = pub.pause.waitingForPlayerId;
+  const who = waitingId ? nameOf(pub, waitingId) : null;
+  const [removing, setRemoving] = useState(false);
+
   return (
     <div className="card center-text stack">
       <div className="title">⏸ Paused</div>
@@ -498,6 +503,22 @@ export function Paused({ pub }: { pub: PublicRoom }) {
             ? `Waiting for ${who} to reconnect…`
             : 'Waiting to resume…'}
       </div>
+      {isHost && reason === 'PLAYER_DISCONNECT' && waitingId && (
+        <div className="stack" style={{ alignItems: 'center', gap: 6 }}>
+          <div className="small muted">Not coming back?</div>
+          <button
+            className="ghost small"
+            disabled={removing}
+            onClick={async () => {
+              setRemoving(true);
+              const ok = await store.removePlayer(waitingId);
+              if (!ok) setRemoving(false);
+            }}
+          >
+            Remove {who} &amp; continue
+          </button>
+        </div>
+      )}
     </div>
   );
 }
