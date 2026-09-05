@@ -262,7 +262,7 @@ function InGame() {
       )}
       {pub.phase === 'ROUND_END' && <RoundEnd pub={pub} priv={priv} />}
       {pub.phase === 'GAME_OVER' && <GameOver pub={pub} priv={priv} />}
-      {pub.phase === 'PAUSED' && <Paused pub={pub} />}
+      {pub.phase === 'PAUSED' && <Paused pub={pub} priv={priv} />}
     </div>
   );
 }

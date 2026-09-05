@@ -76,6 +76,8 @@ export interface ClientToServer {
   /** Host force-ends or restarts. */
   'host:forceEnd': (_: {}) => void;
   'host:rematch': (_: {}, ack: (res: Ack<{}>) => void) => void;
+  /** Host permanently removes a disconnected player (unsticks a stuck pause). */
+  'host:removePlayer': (payload: { playerId: string }, ack: (res: Ack<{}>) => void) => void;
 }
 
 // ---------- Server -> Client events ----------

@@ -255,6 +255,18 @@ export function attachSocketServer(
       ack(okAck({}));
       broadcast(runtime);
     });
+    socket.on('host:removePlayer', ({ playerId }, ack) => {
+      const runtime = runtimeForSocket(socket);
+      const pid = data(socket).playerId;
+      if (!runtime || !pid) return ack(errAck('Not in a room.'));
+      const res = runtime.engine.removePlayer(pid, playerId);
+      if (!res.ok) return ack(errAck(res.error));
+      runtime.sockets.forEach((otherPlayerId, socketId) => {
+        if (otherPlayerId === playerId) runtime.sockets.delete(socketId);
+      });
+      ack(okAck({}));
+      broadcast(runtime);
+    });
 
     // ---- Disconnect ----
     socket.on('disconnect', () => {

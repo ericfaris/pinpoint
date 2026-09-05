@@ -625,16 +625,26 @@ export class GameEngine {
     this.room.pause = { active: false, reason: null, waitingForPlayerId: null };
     this.room.phaseBeforePause = null;
     this.stopTimer();
-    // reshuffle present players across teams
+    // Reset every player's per-game state — including anyone currently
+    // disconnected, who wouldn't otherwise get touched here and would carry
+    // stale tokens/team/insider-history into the next game if they later
+    // reconnect. Only *present* (connected) players get reshuffled onto a
+    // team now; a disconnected player's team goes to null (unassigned) so
+    // they don't silently inflate a team's headcount — the host assigns
+    // them a team from the lobby like any other unassigned player once they
+    // reconnect.
+    for (const p of this.room.players) {
+      p.teamId = null;
+      p.tokensFlipped = 0;
+      p.hasBeenInsiderThisGame = false;
+      p.pendingJoin = false;
+    }
     const present = this.room.players
       .filter((p) => p.connected)
       .sort((a, b) => a.joinOrder - b.joinOrder);
     this.rng.shuffle(present);
     present.forEach((p, i) => {
       p.teamId = i % 2 === 0 ? 'A' : 'B';
-      p.tokensFlipped = 0;
-      p.hasBeenInsiderThisGame = false;
-      p.pendingJoin = false;
     });
     return ok;
   }
@@ -662,10 +672,18 @@ export class GameEngine {
     return ok;
   }
 
-  /** Permanently remove a player (lobby leave / host kick). */
-  removePlayer(playerId: string): EngineResult {
+  /**
+   * Permanently remove a player (lobby leave / host kick). Host-only, and
+   * restricted to players who are currently disconnected — this exists so a
+   * host can clear someone who is gone for good (closed their laptop,
+   * dropped off the network) and unstick a game that's paused waiting on
+   * them forever; it's not a general "kick an active player" tool.
+   */
+  removePlayer(hostId: string, playerId: string): EngineResult {
+    if (!this.isHost(hostId)) return err('Only the host can remove a player.');
     const p = this.player(playerId);
     if (!p) return err('No such player.');
+    if (p.connected) return err('Can only remove a disconnected player.');
     if (p.isHost) this.transferHost(p);
     this.room.players = this.room.players.filter((x) => x.id !== playerId);
     if (this.room.phase === 'PAUSED') this.maybeResume();
@@ -714,6 +732,24 @@ export class GameEngine {
       this.room.timer.phaseDeadline = this.now() + this.pausedRemainingMs;
     }
     this.pausedRemainingMs = null;
+
+    // If the round we just resumed into is refereeing a player who no
+    // longer exists (the host removed the very player everyone was paused
+    // waiting on — see removePlayer), that round can never finish: nobody
+    // else can write that Insider's clues or flip their boards. Restart the
+    // round fresh now that the roster is current rather than resuming into
+    // a dead end. (Not ROUND_END: that phase doesn't need an active
+    // Insider, and nextRound() picks fresh ones anyway.)
+    const round = this.room.round;
+    if (
+      round &&
+      (this.room.phase === 'WRITE_CLUES' ||
+        this.room.phase === 'GUESS_FIRST' ||
+        this.room.phase === 'GUESS_SECOND') &&
+      round.insiders.some((i) => !this.player(i.insiderPlayerId))
+    ) {
+      this.beginRound(round.roundNumber);
+    }
   }
 
   // ----------------------------------------------------------------- timer
