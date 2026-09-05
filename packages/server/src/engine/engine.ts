@@ -264,12 +264,23 @@ export class GameEngine {
     this.room.winnerPlayerIds = [];
     this.room.servedMessages.clear();
 
-    this.beginRound(1);
-    return ok;
+    return this.beginRound(1);
   }
 
   // ------------------------------------------------------------- round flow
-  private beginRound(roundNumber: number): void {
+  /**
+   * Build and commit a fresh round. Can legitimately fail — the card source
+   * (the AI generator's buffer, with its seed fallback) can run dry, e.g. if
+   * the upstream API is unavailable for long enough to drain every buffered
+   * pool. That must surface as an ordinary EngineResult like every other
+   * player-facing failure in this class, never as a thrown exception: this
+   * runs synchronously inside a socket event handler with no caller
+   * upstream expecting a throw, and letting it escape would crash the whole
+   * process for every concurrent room, not just this one. On failure the
+   * room is left exactly as it was (still LOBBY / still ROUND_END) so the
+   * host can simply retry once the card source recovers.
+   */
+  private beginRound(roundNumber: number): EngineResult {
     // Activate mid-game TEAM joiners (3-Player joiners stay queued until end).
     if (this.room.mode === 'TEAM') {
       for (const p of this.room.players) p.pendingJoin = false;
@@ -279,11 +290,15 @@ export class GameEngine {
     if (this.room.mode === 'TEAM') {
       for (const teamId of ['A', 'B'] as TeamId[]) {
         const insiderId = this.chooseTeamInsider(teamId);
-        insiders.push(this.makeInsiderState(insiderId));
+        const state = this.makeInsiderState(insiderId);
+        if (!state) return err('No messages available right now — try again in a moment.');
+        insiders.push(state);
       }
     } else {
       const insiderId = this.chooseThreeInsider();
-      insiders.push(this.makeInsiderState(insiderId));
+      const state = this.makeInsiderState(insiderId);
+      if (!state) return err('No messages available right now — try again in a moment.');
+      insiders.push(state);
     }
 
     this.room.round = {
@@ -294,11 +309,13 @@ export class GameEngine {
     };
     this.room.phase = 'WRITE_CLUES';
     this.startTimer(CLUE_WRITE_SECONDS);
+    return ok;
   }
 
-  private makeInsiderState(insiderId: string): InsiderRoundState {
+  /** Returns null (rather than throwing) if the card source can't deal a card. */
+  private makeInsiderState(insiderId: string): InsiderRoundState | null {
     const card = this.cardSource.deal(this.room.settings.difficulty, this.room.servedMessages);
-    if (!card) throw new Error('Card source exhausted.');
+    if (!card) return null;
     // In-session dedupe: every option dealt is now "served".
     for (const opt of card.options) this.room.servedMessages.add(normalizeText(opt.text));
     const insider = this.player(insiderId);
@@ -593,8 +610,7 @@ export class GameEngine {
   nextRound(hostId: string): EngineResult {
     if (!this.isHost(hostId)) return err('Only the host can advance the round.');
     if (this.room.phase !== 'ROUND_END') return err('Round is not over.');
-    this.beginRound((this.room.round?.roundNumber ?? 0) + 1);
-    return ok;
+    return this.beginRound((this.room.round?.roundNumber ?? 0) + 1);
   }
 
   private endGame(): void {
@@ -748,7 +764,10 @@ export class GameEngine {
         this.room.phase === 'GUESS_SECOND') &&
       round.insiders.some((i) => !this.player(i.insiderPlayerId))
     ) {
-      this.beginRound(round.roundNumber);
+      // If it can't even be restarted (card source also dry — a rare double
+      // failure), don't leave the room resumed into a dead round with no
+      // way forward; end the game cleanly so the host can rematch.
+      if (!this.beginRound(round.roundNumber).ok) this.endGame();
     }
   }
 
