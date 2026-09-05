@@ -348,6 +348,10 @@ function InsiderControls({
 }) {
   const myMsg =
     priv.card && priv.chosenOptionIndex !== null ? priv.card[priv.chosenOptionIndex] : null;
+  // 'card:flag' is fire-and-forget (no ack) — it only ever logs server-side,
+  // so without this a tap gave the player literally no sign anything
+  // happened. Confirm locally the moment it's sent.
+  const [flagged, setFlagged] = useState(false);
   return (
     <div className="card stack">
       {myMsg && (
@@ -374,8 +378,15 @@ function InsiderControls({
           </div>
         </div>
       )}
-      <button className="ghost small" onClick={() => store.flagCard()}>
-        🚩 Flag this message
+      <button
+        className="ghost small"
+        disabled={flagged}
+        onClick={() => {
+          store.flagCard();
+          setFlagged(true);
+        }}
+      >
+        {flagged ? '🚩 Flagged — thanks!' : '🚩 Flag this message'}
       </button>
     </div>
   );
