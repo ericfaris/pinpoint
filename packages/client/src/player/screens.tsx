@@ -8,7 +8,7 @@ import {
   type ThreePlayerRole,
 } from '@pinpoint/shared';
 import { store } from '../common/store.js';
-import { Board, CategoryTag, Timer, Tokens } from '../common/ui.js';
+import { Board, CategoryTag, TeamCrest, Timer, Tokens } from '../common/ui.js';
 
 const THREE_ROLE_LABELS: Record<ThreePlayerRole, string> = {
   INSIDER: '🕵️ You: Insider',
@@ -68,7 +68,10 @@ export function Lobby({ pub, priv }: { pub: PublicRoom; priv: PrivateState }) {
         <div className="row wrap" style={{ alignItems: 'stretch' }}>
           {(['A', 'B'] as TeamId[]).map((t) => (
             <div key={t} className="card grow stack">
-              <div className={`h2 ${teamClass(t)}`}>{teamLabel(t)}</div>
+              <div className={`h2 row ${teamClass(t)}`}>
+                <TeamCrest team={t} />
+                {teamLabel(t)}
+              </div>
               {pub.players.filter((p) => p.teamId === t).map((p) => (
                 <div key={p.id} className="spread">
                   <span>
@@ -450,7 +453,10 @@ function ScoreSummary({ pub }: { pub: PublicRoom }) {
       <div className="row wrap">
         {pub.teams.map((t) => (
           <div key={t.id} className="card grow center-text stack">
-            <div className={`h2 ${teamClass(t.id)}`}>{teamLabel(t.id)}</div>
+            <div className={`h2 ${teamClass(t.id)}`}>
+              <TeamCrest team={t.id} />
+              {teamLabel(t.id)}
+            </div>
             <Tokens count={t.tokensFlipped} />
           </div>
         ))}
