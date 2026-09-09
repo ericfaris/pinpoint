@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import type { PublicRoom, TeamId } from '@pinpoint/shared';
 import { useGame } from '../common/useGame.js';
 import { store } from '../common/store.js';
-import { Board, CategoryTag, Timer, Tokens } from '../common/ui.js';
+import { Board, CategoryTag, TeamCrest, Timer, Tokens } from '../common/ui.js';
 
 const teamClass = (t: TeamId) => (t === 'A' ? 'teamA' : 'teamB');
 const nameOf = (pub: PublicRoom, id: string) =>
@@ -168,7 +168,10 @@ function Scoreboard({ pub }: { pub: PublicRoom }) {
       <div className="teams">
         {pub.teams.map((t) => (
           <div key={t.id} className="scorecard spread">
-            <span className={`teamname ${teamClass(t.id)}`}>Team {t.id}</span>
+            <span className={`teamname ${teamClass(t.id)}`}>
+              <TeamCrest team={t.id} />
+              Team {t.id}
+            </span>
             <Tokens count={t.tokensFlipped} big />
           </div>
         ))}
