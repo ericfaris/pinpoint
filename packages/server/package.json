@@ -12,7 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.68.0",
+    "@anthropic-ai/sdk": "^0.125.0",
     "@pinpoint/shared": "*",
     "dotenv": "^17.0.0",
     "express": "^5.0.0",
