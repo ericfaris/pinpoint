@@ -14,7 +14,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
     "@pinpoint/shared": "*",
-    "dotenv": "^16.4.7",
+    "dotenv": "^17.0.0",
     "express": "^4.21.2",
     "socket.io": "^4.8.1"
   },
