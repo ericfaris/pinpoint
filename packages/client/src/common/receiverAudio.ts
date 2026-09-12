@@ -18,7 +18,7 @@ const CUES = {
 } as const;
 
 export function useReceiverAudio(pub: PublicRoom | null): void {
-  const els = useRef<Record<keyof typeof CUES, HTMLAudioElement>>();
+  const els = useRef<Record<keyof typeof CUES, HTMLAudioElement> | undefined>(undefined);
   const prevPhase = useRef<string | null>(null);
   const prevResolvedCount = useRef(0);
 
