@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import QRCode from 'qrcode';
 import type { PublicRoom, TeamId } from '@pinpoint/shared';
 import { useGame } from '../common/useGame.js';
+import { useReceiverAudio } from '../common/receiverAudio.js';
 import { store } from '../common/store.js';
 import { Board, CategoryTag, TeamCrest, Timer, Tokens } from '../common/ui.js';
 
@@ -24,6 +25,8 @@ export default function App() {
   const g = useGame();
   const [baseUrl, setBaseUrl] = useState(window.location.origin);
   const [appVersion, setAppVersion] = useState('');
+
+  useReceiverAudio(g.pub ?? null);
 
   // Resolve base URL for QR codes; Cast and ?code= handled in main.tsx.
   useEffect(() => {
@@ -154,7 +157,7 @@ function GameTV({ pub }: { pub: PublicRoom }) {
       ) : (
         <div className="center" style={{ flex: 1 }}>
           <div className="brand">
-            {pub.phase === 'WRITE_CLUES' ? 'Insiders are writing clues…' : 'Get ready…'}
+            {pub.phase === 'WRITE_CLUES' ? 'Insiders are transmitting clues…' : 'Stand by…'}
           </div>
         </div>
       )}

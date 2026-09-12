@@ -214,7 +214,7 @@ function InsiderWriter({ pub, priv }: { pub: PublicRoom; priv: PrivateState }) {
 
   return (
     <div className="stack">
-      <PhaseHeader pub={pub} priv={priv} title="Your turn: write clues" />
+      <PhaseHeader pub={pub} priv={priv} title="Your turn — transmit clues" />
       <div className="card stack">
         <div className="h2">Pick your secret message</div>
         <div className="muted small">Tap one. Your teammates can’t see this screen.</div>
@@ -260,10 +260,10 @@ function InsiderWriter({ pub, priv }: { pub: PublicRoom; priv: PrivateState }) {
           if (!ok) setSubmitting(false);
         }}
       >
-        {allFilled ? 'Submit clues' : 'Pick a message first'}
+        {allFilled ? 'Transmit clues' : 'Pick a message first'}
       </button>
       <div className="muted small center-text">
-        Blank boards are allowed. First to submit is guessed first.
+        Blank boards are allowed. First to transmit is guessed first.
       </div>
     </div>
   );

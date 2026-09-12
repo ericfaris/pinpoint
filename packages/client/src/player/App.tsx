@@ -59,7 +59,7 @@ export default function App() {
     <div className="app center">
       <div className="stack" style={{ width: '100%' }}>
         <div className="center-text stack">
-          <div className="title">Pinpoint</div>
+          {view !== 'landing' && <div className="title">Pinpoint</div>}
           <div className="muted">In-person party game · cast to your TV</div>
         </div>
         {g.error && <ErrorBanner message={g.error} />}
@@ -89,6 +89,11 @@ function Landing({ onHost, onJoin }: { onHost: () => void; onJoin: () => void })
   const supported = isCastSupported();
   return (
     <div className="card stack">
+      <img
+        className="poster-hero"
+        src="/poster.webp"
+        alt="Pinpoint — the enemy is watching. Stay alert, stay ready."
+      />
       {!supported && (
         <div className="banner">
           Hosting needs <b>Chrome on desktop or Android</b> (for Google Cast). You can still
