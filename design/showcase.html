@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pinpoint — Design System Showcase</title>
+
+<!-- The real stylesheet. Every color, shape, and component below is styled
+     by this file — nothing on this page is a hand-redrawn approximation. -->
+<link rel="stylesheet" href="../packages/client/src/common/styles.css" />
+<style>
+  /* Standalone-open adjustment only: styles.css points its @font-face at the
+   * app's server root ("/fonts/…"), which doesn't resolve when this page is
+   * opened directly from design/. This re-declares the same font family
+   * pointed at the real file on disk — no font, weight, or usage in
+   * styles.css changes. See DESIGN.md → "Opening this page". */
+  @font-face {
+    font-family: "Kremlin Kommisar";
+    src: url("../packages/client/public/fonts/KremlinKommisar.ttf") format("truetype");
+    font-display: swap;
+  }
+
+  /* ---- Showcase chrome only (never used by the real app) ---- */
+  body.showcase { max-width: 1040px; margin: 0 auto; padding: 32px 20px 100px; }
+  .sc-hero { padding: 40px 0 24px; }
+  .sc-hero p { max-width: 60ch; }
+  .sc-section { margin: 56px 0; }
+  .sc-section > h2 { font-size: 1.6rem; border-bottom: 2px solid var(--line); padding-bottom: 8px; margin-bottom: 20px; }
+  .sc-section > p.sc-note { color: var(--muted); font-family: var(--font-body); margin: -8px 0 20px; max-width: 65ch; }
+  .sc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .sc-swatch { border: 2px solid var(--line); border-radius: var(--radius-md); overflow: hidden; background: var(--panel); font-family: var(--font-data); font-size: 0.72rem; }
+  .sc-swatch .chip { height: 64px; }
+  .sc-swatch .meta { padding: 8px 10px; }
+  .sc-swatch .meta b { display: block; font-size: 0.85rem; margin-bottom: 2px; }
+  .sc-row-demo { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 10px; }
+  .sc-type-row { display: flex; align-items: baseline; gap: 18px; border-bottom: 1px dashed rgba(36,29,18,0.25); padding: 12px 0; }
+  .sc-type-row .sample { flex: 1; }
+  .sc-type-row .meta { font-family: var(--font-data); font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+  .sc-space-box { background: var(--accent-2); border-radius: 2px; }
+  .sc-space-item, .sc-radius-item, .sc-shadow-item, .sc-motion-item { display: flex; flex-direction: column; align-items: center; gap: 8px; font-family: var(--font-data); font-size: 0.72rem; }
+  .sc-radius-box { width: 64px; height: 64px; background: var(--panel-2); border: 2px solid var(--line); }
+  .sc-shadow-box { width: 84px; height: 56px; background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius-sm); }
+  .sc-motion-box {
+    width: 90px; height: 56px; background: var(--accent); color: #f2e9cd; border: 2px solid var(--line);
+    border-radius: var(--radius-sm); display: grid; place-items: center; cursor: pointer; user-select: none;
+    font-family: var(--font-display); text-transform: uppercase; font-size: 0.7rem;
+  }
+  .sc-motion-box.press:active { transform: translate(2px, 2px); box-shadow: var(--shadow-stamp-pressed); }
+  .sc-motion-box.fade { transition: background var(--duration-fade) ease; }
+  .sc-motion-box.fade:hover { background: var(--good); }
+  .sc-flipdemo { width: 130px; }
+  .sc-comp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: start; }
+  .sc-tags { display: flex; gap: 10px; flex-wrap: wrap; }
+  .sc-crests { display: flex; gap: 24px; align-items: center; }
+  .sc-tv-frame { background: #1b1710; border-radius: 8px; padding: 3px; }
+  .sc-tv-frame .tv { position: relative; width: 100%; aspect-ratio: 16/9; height: auto; border-radius: 6px; }
+  .sc-asset-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .sc-asset-row img { border: 2px solid var(--line); border-radius: var(--radius-sm); box-shadow: var(--shadow-stamp); }
+  .sc-favicon-row { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .sc-favicon-row .box { background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius-sm); padding: 10px; display: grid; place-items: center; }
+  footer.sc-foot { margin-top: 80px; padding-top: 20px; border-top: 2px solid var(--line); color: var(--muted); font-size: 0.85rem; }
+</style>
+</head>
+<body class="showcase">
+
+  <div class="sc-hero">
+    <div class="title">Pinpoint</div>
+    <p class="muted">Design System Showcase — every token and component below renders live from
+      <code>packages/client/src/common/styles.css</code>, the app's real stylesheet. Nothing on this
+      page is a mockup. Full rationale: <a href="../DESIGN.md">DESIGN.md</a>.</p>
+  </div>
+
+  <!-- ============================================================ COLOR -->
+  <section class="sc-section">
+    <h2>Color</h2>
+    <p class="sc-note">Every swatch is painted with <code>var(--token)</code> — the label's hex value is read
+      back from the live computed style, not retyped, so it can never drift from the stylesheet.</p>
+    <div class="sc-grid" id="sc-colors"></div>
+  </section>
+
+  <!-- ============================================================= TYPE -->
+  <section class="sc-section">
+    <h2>Type</h2>
+    <p class="sc-note">Three faces, one role each: <b>display</b> (Kremlin Kommisar → Oswald → Impact) for
+      anything stamped or shouted, <b>body</b> (Domine) for reading copy, <b>data</b> (Space Mono) for
+      codes, timers, and dossier metadata.</p>
+    <div id="sc-type"></div>
+  </section>
+
+  <!-- ========================================================== SPACING -->
+  <section class="sc-section">
+    <h2>Spacing</h2>
+    <p class="sc-note">4px base scale used for gaps and padding throughout <code>.stack</code>, <code>.row</code>,
+      <code>.card</code>, and form controls.</p>
+    <div class="sc-row-demo" id="sc-space"></div>
+  </section>
+
+  <!-- =========================================================== RADIUS -->
+  <section class="sc-section">
+    <h2>Radius</h2>
+    <div class="sc-row-demo" id="sc-radius"></div>
+  </section>
+
+  <!-- ========================================================== SHADOW -->
+  <section class="sc-section">
+    <h2>Shadow</h2>
+    <p class="sc-note">A hard-edged "stamped paper" shadow, not a soft UI drop-shadow — no blur, offset only.
+      Buttons swap to the pressed variant on <code>:active</code>.</p>
+    <div class="sc-row-demo">
+      <div class="sc-shadow-item">
+        <div class="sc-shadow-box" style="box-shadow: var(--shadow-stamp);"></div>
+        <span>--shadow-stamp</span>
+      </div>
+      <div class="sc-shadow-item">
+        <div class="sc-shadow-box" style="box-shadow: var(--shadow-stamp-pressed);"></div>
+        <span>--shadow-stamp-pressed</span>
+      </div>
+      <div class="sc-shadow-item">
+        <div class="sc-shadow-box" style="box-shadow: var(--shadow-none);"></div>
+        <span>--shadow-none</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== MOTION -->
+  <section class="sc-section">
+    <h2>Motion</h2>
+    <p class="sc-note">Click/hover each box — it plays the named transition for real.</p>
+    <div class="sc-row-demo">
+      <div class="sc-motion-item">
+        <div class="sc-motion-box press">press me</div>
+        <span>--duration-press / --ease-press</span>
+      </div>
+      <div class="sc-motion-item">
+        <div class="sc-motion-box fade">hover me</div>
+        <span>--duration-fade</span>
+      </div>
+      <div class="sc-motion-item">
+        <div class="sc-flipdemo">
+          <button class="board clickable" id="sc-flip-btn" style="width:130px">
+            <div class="board-inner" id="sc-flip-inner">
+              <div class="board-face down"><div class="muted small">Board A</div><div>Tap to flip</div></div>
+              <div class="board-face up"><div class="muted small">Board A</div><div class="word">ROCKET</div></div>
+            </div>
+          </button>
+        </div>
+        <span>--duration-flip / --ease-flip</span>
+      </div>
+      <div class="sc-motion-item">
+        <button class="primary" id="sc-reveal-btn" style="animation: none;">replay reveal</button>
+        <span>--duration-reveal / --ease-out</span>
+      </div>
+    </div>
+    <div class="row wrap" id="sc-reveal-cards" style="margin-top:16px;">
+      <div class="card grow" style="min-width:140px;">Card 1</div>
+      <div class="card grow" style="min-width:140px;">Card 2</div>
+      <div class="card grow" style="min-width:140px;">Card 3</div>
+    </div>
+  </section>
+
+  <!-- ======================================================= COMPONENTS -->
+  <section class="sc-section">
+    <h2>Components — Buttons</h2>
+    <div class="sc-row-demo">
+      <button>Default</button>
+      <button class="primary">Primary</button>
+      <button class="good">Good</button>
+      <button class="bad">Bad</button>
+      <button class="ghost">Ghost</button>
+      <button disabled>Disabled</button>
+      <button class="primary" disabled>Primary disabled</button>
+    </div>
+  </section>
+
+  <section class="sc-section">
+    <h2>Components — Form controls</h2>
+    <div class="sc-comp-grid">
+      <label class="stack small">
+        <span class="muted">Room code</span>
+        <input placeholder="4-digit code" value="1974" />
+      </label>
+      <label class="stack small">
+        <span class="muted">Invalid input</span>
+        <input class="error" value="oops" />
+      </label>
+      <label class="stack small">
+        <span class="muted">Insider rotation</span>
+        <select><option>In order</option><option>Random</option></select>
+      </label>
+    </div>
+  </section>
+
+  <section class="sc-section">
+    <h2>Components — Pills, banner, notice</h2>
+    <div class="sc-row-demo">
+      <span class="pill">Code 1974</span>
+      <span class="pill">host</span>
+    </div>
+    <div class="stack">
+      <div class="banner spread"><span>Hosting needs Chrome on desktop or Android.</span><button class="ghost small">✕</button></div>
+      <div class="notice center-text">Waiting for the host to start…</div>
+    </div>
+  </section>
+
+  <section class="sc-section">
+    <h2>Components — Cards &amp; option select</h2>
+    <div class="sc-comp-grid">
+      <div class="card stack">
+        <div class="h2">Lobby</div>
+        <div class="muted small">📺 TV connected</div>
+      </div>
+      <button class="option sel">
+        <span class="tag C" style="background:var(--cat-C)">🕵️</span>
+        <span class="grow">A retired locksmith</span>
+        <span class="muted small">Character</span>
+      </button>
+      <button class="option">
+        <span class="tag M" style="background:var(--cat-M)">📻</span>
+        <span class="grow">Late-night radio call-in show</span>
+        <span class="muted small">Media</span>
+      </button>
+    </div>
+  </section>
+
+  <section class="sc-section">
+    <h2>Components — Category tags</h2>
+    <p class="sc-note">Hand-drawn dossier pictograms, one per message category, rendered from the same inline
+      SVG markup as <code>CategoryIcon</code> in <code>ui.tsx</code>.</p>
+    <div class="sc-tags" id="sc-cat-tags"></div>
+  </section>
+
+  <section class="sc-section">
+    <h2>Components — Team crests &amp; tokens</h2>
+    <div class="sc-crests" id="sc-crests"></div>
+    <div class="row" style="margin-top:16px; align-items:center;">
+      <span class="muted small">Tokens (3 of 5 flipped):</span>
+      <span class="tokens"><span class="token on">★</span><span class="token on">★</span><span class="token on">★</span><span class="token">★</span><span class="token">★</span></span>
+    </div>
+  </section>
+
+  <section class="sc-section">
+    <h2>Components — Clue board (flip card)</h2>
+    <div class="grid3" style="max-width: 420px;">
+      <div class="board"><div class="board-inner"><div class="board-face down"><div class="muted small">Board A</div></div><div class="board-face up"><div class="word">ROCKET</div></div></div></div>
+      <div class="board"><div class="board-inner flipped"><div class="board-face down"><div class="muted small">Board B</div></div><div class="board-face up"><div class="word">MOSCOW</div></div></div></div>
+      <div class="board"><div class="board-inner"><div class="board-face down"><div class="muted small">Board C</div></div><div class="board-face up"><div class="word">SILENT</div></div></div></div>
+    </div>
+  </section>
+
+  <section class="sc-section">
+    <h2>Surface — TV / Receiver</h2>
+    <p class="sc-note">Same tokens, scaled with <code>vw</code>/<code>vh</code> units for a room-distance
+      readable surface — never a separate look.</p>
+    <div class="sc-tv-frame">
+      <div class="tv" style="background: radial-gradient(1400px 900px at 50% -10%, var(--bg-2), var(--bg));">
+        <div class="spread">
+          <div class="brand">ROUND 3 · 1ST MESSAGE</div>
+          <span class="timer bigtimer">27s</span>
+        </div>
+        <div class="teams">
+          <div class="scorecard spread">
+            <span class="teamname teamA" id="sc-tv-crestA"></span>
+            <span class="tokens bigtokens"><span class="token on">★</span><span class="token on">★</span><span class="token">★</span><span class="token">★</span><span class="token">★</span></span>
+          </div>
+          <div class="scorecard spread">
+            <span class="teamname teamB" id="sc-tv-crestB"></span>
+            <span class="tokens bigtokens"><span class="token on">★</span><span class="token">★</span><span class="token">★</span><span class="token">★</span><span class="token">★</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sc-section">
+    <h2>Generated art</h2>
+    <p class="sc-note">The recruitment poster used on the landing screen, and the mood board that anchored this
+      pass. See DESIGN.md → "Mood board directions" for the two runner-up boards and why this one won.</p>
+    <div class="sc-asset-row">
+      <img src="../packages/client/public/poster.webp" alt="Pinpoint recruitment poster" style="height:260px;" />
+      <img src="assets/mood-illustrated-propaganda.png" alt="Chosen mood board: Illustrated Propaganda Poster" style="height:260px;" />
+    </div>
+  </section>
+
+  <section class="sc-section">
+    <h2>Favicon / app icon</h2>
+    <p class="sc-note">A wax-seal medallion with a red triangulation crosshair, hand-rendered at exact token
+      hex values after an Ideogram concept pass drifted off-palette. See DESIGN.md §8 for why.</p>
+    <div class="sc-favicon-row">
+      <div class="box"><img src="../packages/client/public/favicon.ico" width="16" height="16" alt="16px" /></div>
+      <div class="box"><img src="../packages/client/public/favicon.ico" width="32" height="32" alt="32px" /></div>
+      <div class="box"><img src="../packages/client/public/favicon.ico" width="64" height="64" alt="64px" /></div>
+      <div class="box"><img src="../packages/client/public/apple-touch-icon.png" width="90" height="90" alt="apple-touch-icon 180px (shown at half size)" /></div>
+      <div class="box"><img src="../packages/client/public/icon-512.png" width="128" height="128" alt="icon-512.png (shown at 128px)" /></div>
+    </div>
+  </section>
+
+  <footer class="sc-foot">
+    Pinpoint — Cold War Dossier design system. Generated as part of a ui-design uplift pass. See
+    <a href="../DESIGN.md">/DESIGN.md</a> for the full write-up.
+  </footer>
+
+<script>
+  const css = getComputedStyle(document.documentElement);
+  const val = (name) => css.getPropertyValue(name).trim();
+
+  // ---- Color swatches ----
+  const colorTokens = [
+    ['--bg', 'Background'], ['--bg-2', 'Background 2'],
+    ['--panel', 'Panel'], ['--panel-2', 'Panel 2'],
+    ['--text', 'Text (ink)'], ['--muted', 'Muted text'],
+    ['--accent', 'Accent (Soviet red)'], ['--accent-2', 'Accent 2 (steel blue)'],
+    ['--good', 'Good / correct'], ['--bad', 'Bad / incorrect'], ['--warn', 'Warn / star'],
+    ['--line', 'Ink line/border'],
+    ['--teamA', 'Team A'], ['--teamB', 'Team B'],
+    ['--cat-C', 'Category: Character'], ['--cat-M', 'Category: Media'],
+    ['--cat-P', 'Category: Person'], ['--cat-L', 'Category: Location'],
+    ['--cat-B', 'Category: Brand'], ['--cat-W', 'Category: Wildcard'],
+  ];
+  const colorGrid = document.getElementById('sc-colors');
+  for (const [token, label] of colorTokens) {
+    const div = document.createElement('div');
+    div.className = 'sc-swatch';
+    div.innerHTML = `<div class="chip" style="background:var(${token})"></div>
+      <div class="meta"><b>${label}</b>${token}<br>${val(token)}</div>`;
+    colorGrid.appendChild(div);
+  }
+
+  // ---- Type scale ----
+  const typeTokens = [
+    ['--text-xs', '.pill / fine print', 'font-data'],
+    ['--text-sm', '.small — captions, helper text', 'font-body'],
+    ['--text-base', 'body copy', 'font-body'],
+    ['--text-md', '.h2 — section headings', 'font-display'],
+    ['--text-lg', 'board word', 'font-display'],
+    ['--text-xl', '.title — screen headline', 'font-display'],
+    ['--text-2xl', '.code-big — join code', 'font-data'],
+  ];
+  const typeWrap = document.getElementById('sc-type');
+  for (const [token, desc, family] of typeTokens) {
+    const row = document.createElement('div');
+    row.className = 'sc-type-row';
+    row.innerHTML = `<div class="sample" style="font-size:var(${token}); font-family:var(--${family});">Pinpoint the message</div>
+      <div class="meta">${token}: ${val(token)}<br>${desc}</div>`;
+    typeWrap.appendChild(row);
+  }
+
+  // ---- Spacing ----
+  const spaceTokens = ['--space-1','--space-2','--space-3','--space-4','--space-5','--space-6','--space-7','--space-8'];
+  const spaceWrap = document.getElementById('sc-space');
+  for (const token of spaceTokens) {
+    const item = document.createElement('div');
+    item.className = 'sc-space-item';
+    item.innerHTML = `<div class="sc-space-box" style="width:var(${token}); height:var(${token});"></div><span>${token}: ${val(token)}</span>`;
+    spaceWrap.appendChild(item);
+  }
+
+  // ---- Radius ----
+  const radiusTokens = ['--radius-sm','--radius-md','--radius-pill'];
+  const radiusWrap = document.getElementById('sc-radius');
+  for (const token of radiusTokens) {
+    const item = document.createElement('div');
+    item.className = 'sc-radius-item';
+    item.innerHTML = `<div class="sc-radius-box" style="border-radius:var(${token});"></div><span>${token}: ${val(token)}</span>`;
+    radiusWrap.appendChild(item);
+  }
+
+  // ---- Interactive: flip demo ----
+  document.getElementById('sc-flip-btn').addEventListener('click', () => {
+    document.getElementById('sc-flip-inner').classList.toggle('flipped');
+  });
+
+  // ---- Interactive: replay reveal animation ----
+  document.getElementById('sc-reveal-btn').addEventListener('click', () => {
+    const cards = document.querySelectorAll('#sc-reveal-cards .card');
+    cards.forEach((c, i) => {
+      c.style.animation = 'none';
+      void c.offsetWidth; // reflow to restart
+      c.style.animation = `reveal var(--duration-reveal) var(--ease-out) backwards`;
+      c.style.animationDelay = `${i * 0.06}s`;
+    });
+  });
+
+  // ---- Category tag icons (mirrors CategoryIcon in ui.tsx) ----
+  const catIcons = {
+    C: `<svg viewBox="0 0 100 100" class="cicon"><g fill="currentColor" stroke="var(--line)" stroke-width="5" stroke-linejoin="round"><path d="M30 42 Q50 16 70 42 L70 46 L30 46 Z"/><ellipse cx="50" cy="46" rx="27" ry="7"/><path d="M22 92 L34 58 L66 58 L78 92 Z"/></g><path d="M50 58 L41 76 L50 70 L59 76 Z" fill="var(--line)"/><g fill="none" stroke="var(--line)" stroke-width="5" stroke-linecap="round"><circle cx="74" cy="76" r="11"/><line x1="82" y1="84" x2="92" y2="94"/></g></svg>`,
+    M: `<svg viewBox="0 0 100 100" class="cicon"><g fill="currentColor" stroke="var(--line)" stroke-width="5" stroke-linejoin="round"><rect x="14" y="64" width="72" height="18" rx="4"/><circle cx="34" cy="64" r="16"/><circle cx="66" cy="64" r="16"/></g><g fill="var(--line)"><circle cx="34" cy="64" r="5"/><circle cx="66" cy="64" r="5"/></g><g fill="none" stroke="var(--line)" stroke-width="5" stroke-linecap="round"><path d="M40 40 Q50 30 60 40"/><path d="M33 30 Q50 12 67 30"/></g></svg>`,
+    P: `<svg viewBox="0 0 100 100" class="cicon"><rect x="22" y="14" width="56" height="72" rx="6" fill="currentColor" stroke="var(--line)" stroke-width="5"/><g fill="none" stroke="var(--line)" stroke-width="3.5"><ellipse cx="50" cy="52" rx="21" ry="25"/><ellipse cx="50" cy="52" rx="14" ry="17"/><ellipse cx="50" cy="52" rx="7" ry="9"/></g></svg>`,
+    L: `<svg viewBox="0 0 100 100" class="cicon"><g fill="none" stroke="var(--line)" stroke-width="4" stroke-dasharray="4 5" stroke-linecap="round"><line x1="16" y1="16" x2="50" y2="58"/><line x1="84" y1="16" x2="50" y2="58"/></g><g fill="var(--line)"><circle cx="16" cy="16" r="5"/><circle cx="84" cy="16" r="5"/></g><path d="M32 42 A18 18 0 1 1 68 42 L50 88 Z" fill="currentColor" stroke="var(--line)" stroke-width="5" stroke-linejoin="round"/><circle cx="50" cy="42" r="7" fill="var(--line)"/></svg>`,
+    B: `<svg viewBox="0 0 100 100" class="cicon"><rect x="16" y="26" width="68" height="58" rx="3" fill="currentColor" stroke="var(--line)" stroke-width="5"/><g fill="none" stroke="var(--line)" stroke-width="3.5"><line x1="16" y1="26" x2="84" y2="84"/><line x1="84" y1="26" x2="16" y2="84"/></g><path d="M50,44 L54.5,50.6 L62,52.9 L57.2,59 L57.6,66.8 L50,64 L42.4,66.8 L42.8,59 L38,52.9 L45.5,50.6 Z" fill="var(--line)"/></svg>`,
+    W: `<svg viewBox="0 0 100 100" class="cicon"><rect x="18" y="14" width="64" height="72" rx="4" fill="currentColor" stroke="var(--line)" stroke-width="5"/><g fill="var(--line)"><rect x="26" y="22" width="48" height="10" rx="2"/><rect x="26" y="68" width="48" height="10" rx="2"/></g><text x="50" y="60" text-anchor="middle" font-size="34" font-weight="900" fill="var(--line)">?</text></svg>`,
+  };
+  const catLabels = { C: 'Character', M: 'Media', P: 'Person', L: 'Location', B: 'Brand', W: 'Wildcard' };
+  const tagsWrap = document.getElementById('sc-cat-tags');
+  for (const cat of Object.keys(catIcons)) {
+    const span = document.createElement('span');
+    span.className = `tag ${cat}`;
+    span.title = catLabels[cat];
+    span.innerHTML = catIcons[cat];
+    tagsWrap.appendChild(span);
+    const labelDiv = document.createElement('div');
+  }
+
+  // ---- Team crests (mirrors TeamCrest in ui.tsx) ----
+  function starPath(cx, cy, rOuter, rInner, points = 5) {
+    const step = Math.PI / points;
+    const parts = [];
+    for (let i = 0; i < points * 2; i++) {
+      const r = i % 2 === 0 ? rOuter : rInner;
+      const angle = -Math.PI / 2 + i * step;
+      const x = (cx + r * Math.cos(angle)).toFixed(2);
+      const y = (cy + r * Math.sin(angle)).toFixed(2);
+      parts.push(`${i === 0 ? 'M' : 'L'}${x},${y}`);
+    }
+    return `${parts.join(' ')} Z`;
+  }
+  function crestSvg(team) {
+    const teamVar = team === 'A' ? 'var(--teamA)' : 'var(--teamB)';
+    const inner = team === 'A'
+      ? `<g><path d="${starPath(50, 42, 24, 10)}" fill="var(--panel)" stroke="var(--line)" stroke-width="2.5" stroke-linejoin="round"/>
+           <g stroke="var(--line)" stroke-width="1.5" stroke-linecap="round">
+             <line x1="36" y1="76" x2="60" y2="64" stroke="var(--warn)" stroke-width="7"/>
+             <path d="M42 62 A11 11 0 1 0 62 76" fill="none" stroke="var(--warn)" stroke-width="7"/>
+           </g></g>`
+      : `<g><path d="M50 34 L20 58 L34 51 L50 62 L66 51 L80 58 Z" fill="var(--panel)" stroke="var(--line)" stroke-width="2.5" stroke-linejoin="round"/>
+           <circle cx="50" cy="28" r="8" fill="var(--panel)" stroke="var(--line)" stroke-width="2.5"/>
+           <path d="M45 29 L36 25 L45 34 Z" fill="var(--warn)"/>
+           ${[-24, -12, 0, 12, 24].map((dx) => `<path d="${starPath(50 + dx, 78, 6, 2.5)}" fill="var(--warn)"/>`).join('')}
+         </g>`;
+    return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="var(--panel)" stroke="var(--line)" stroke-width="5"/><circle cx="50" cy="50" r="38" fill="${teamVar}" stroke="var(--line)" stroke-width="3"/>${inner}</svg>`;
+  }
+  const crestsWrap = document.getElementById('sc-crests');
+  for (const team of ['A', 'B']) {
+    const span = document.createElement('span');
+    span.className = 'crest';
+    span.style.width = '56px'; span.style.height = '56px';
+    span.title = `Team ${team}`;
+    span.innerHTML = crestSvg(team);
+    const label = document.createElement('span');
+    label.className = 'row';
+    label.style.gap = '10px';
+    label.appendChild(span);
+    const text = document.createElement('span');
+    text.className = team === 'A' ? 'teamA' : 'teamB';
+    text.textContent = `Team ${team}`;
+    label.appendChild(text);
+    crestsWrap.appendChild(label);
+  }
+  document.getElementById('sc-tv-crestA').innerHTML = `<span class="crest">${crestSvg('A')}</span>Team A`;
+  document.getElementById('sc-tv-crestB').innerHTML = `<span class="crest">${crestSvg('B')}</span>Team B`;
+</script>
+</body>
+</html>

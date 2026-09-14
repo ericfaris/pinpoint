@@ -1,5 +1,11 @@
 # Pinpoint — Design System
 
+> **Superseded:** the canonical, up-to-date design doc is now
+> [`/DESIGN.md`](../DESIGN.md) at the repo root (2026-09-13/14 uplift pass).
+> This file is kept for its asset table and the audio-cue detail below, both
+> still accurate, but token/component documentation should be read from
+> `/DESIGN.md` going forward.
+
 **Theme: Cold War intelligence dossier.** Offset-printed on aging stock, stamped
 in propaganda red, set in condensed government type. Every surface is a filed
 document. Reference board: 1960s US propaganda posters + vintage spy board-game
