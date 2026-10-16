@@ -243,7 +243,7 @@ render logic: category icons, team crests, tokens, timer, board).
 | Top-secret texture tile | `design/assets/texture-topsecret-tile.webp` | Low-contrast background texture reference | Tileable aged-paper/redaction texture (earlier pass) |
 | Player-screen mockup | `design/assets/mockup-clue-submission.webp` | Visual target for the clue-writing screen | (earlier pass) |
 | Mood board — chosen direction | `design/assets/mood-illustrated-propaganda.png` | This pass's direction-selection artifact (see §1) | "Illustrated Propaganda Poster" — cream parchment, palette chips, condensed mid-century display type, halftone texture, `TRANSMIT CLUE` button |
-| Favicon / app icon | `packages/client/public/favicon.ico`, `apple-touch-icon.png`, `icon-512.png` | Browser tab / home-screen icon | See §8 — hand-rendered to hit exact token hex values after an Ideogram concept pass drifted off-palette |
+| Favicon / app icon | `packages/client/public/favicon.ico`, `apple-touch-icon.png`, `icon-*.png` | Browser tab / home-screen icon | See §8 — house icon standard, rendered from `scripts/icons/icon.svg` |
 
 The body background is a two-layer CSS gradient (`--bg`/`--bg-2` radial +
 a 3px repeating-linear-gradient "paper fiber" texture at 2.5% opacity) — no
@@ -273,25 +273,28 @@ unchanged; only CSS/markup classes they already render into were extended.
 
 ## 8. Favicon / app icon
 
-**Before this pass:** `packages/client/public/favicon.ico` was a generic
-orange map-pin on navy — unrelated to the Cold War dossier identity and
-never matched the app's own palette.
+**House icon standard (2026-10-16).** Every mooseflip app now shares one icon
+standard, modelled on redline and jambo: one bold, dimensional mark on a rich
+full-bleed tile. Pinpoint's is the dossier crosshair target (parchment disc,
+`--accent` crimson crosshair, `--warn` brass bullseye, ink rim) with a crimson
+push-pin driven into the centre, on an ink radial (`#4d3f27` → `#1a140b`). It
+replaces the earlier Pillow-rendered wax-seal medallion, keeping its palette and
+triangulation motif.
 
-**Process:** generated a concept via Ideogram (a red crosshair + brass
-center dot on an ink-black rounded square — the "triangulation" motif named
-in the app's own title). The raw generation rendered close but not
-pixel-exact to the token palette (anti-aliased edges, slightly off-hue red/
-gold) and Ideogram's background-removal pass didn't cleanly key out its
-near-white backing, so rather than ship a color-drifted, halo-fringed icon,
-the same concept was re-rendered by hand with Pillow using the exact token
-hex values (`--line` #241D12 plate, `--panel` #F2E9CD medallion ring,
-`--accent` #A3222C crosshair, `--warn` #B9911F center dot) — a wax-seal
-medallion with a red triangulation crosshair, matching `TeamCrest`'s "stamped
-badge" language elsewhere in the system. Verified legible at 16px (see
-`design/showcase.html` → Favicon section).
+Master: `scripts/icons/icon.svg` (`#bg` + `#mark` layers, plus `#mark-small`, a
+zoomed cut for favicons). `python3 scripts/icons/build.py` renders into
+`packages/client/public/`:
 
-| File | Sizes | Wired via |
+| File | Size | Wired via |
 |---|---|---|
+| `favicon.ico` | 16/32/48 | `<link rel="icon" href="/favicon.ico" sizes="any" />` in `index.html` and `receiver.html` |
+| `apple-touch-icon.png` | 180 (square; iOS rounds it) | `<link rel="apple-touch-icon">` in `index.html` |
+| `icon-192.png`, `icon-512.png` | rounded tile | `manifest.webmanifest` |
+| `icon-maskable-512.png` | mark in the 80% safe zone | `manifest.webmanifest` (`purpose: maskable`) |
+
+`packages/client/src/icons.test.ts` guards the set and its wiring.
+
+---|---|---|
 | `packages/client/public/favicon.ico` | 16/32/48/64/128/256 (multi-size ICO) | `<link rel="icon" href="/favicon.ico" sizes="any">` in both `index.html` and `receiver.html` |
 | `packages/client/public/icon-512.png` | 512×512 | `<link rel="icon" type="image/png" sizes="512x512">` in both HTML entry points |
 | `packages/client/public/apple-touch-icon.png` | 180×180 | `<link rel="apple-touch-icon">` in `index.html` |
@@ -331,9 +334,8 @@ needed for the new icon files to ship.
 | `packages/client/src/common/styles.css` | CSS | Canonical token + component source (edited this pass) |
 | `packages/client/public/fonts/KremlinKommisar.ttf` | Font | Display face |
 | `packages/client/public/poster.webp` | Image | Landing hero |
-| `packages/client/public/favicon.ico` | Icon | Browser tab icon (replaced this pass) |
-| `packages/client/public/apple-touch-icon.png` | Icon | iOS home-screen icon (new this pass) |
-| `packages/client/public/icon-512.png` | Icon | High-res PNG icon (new this pass) |
+| `packages/client/public/favicon.ico` | Icon | Browser tab icon (house standard, 2026-10-16) |
+| `packages/client/public/apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `manifest.webmanifest` | Icon | Home-screen / PWA icon set (house standard, 2026-10-16) |
 | `design/DESIGN-SYSTEM.md` | Doc | Prior design doc — kept for asset table + audio-cue detail, superseded by this file |
 | `design/showcase.html` | Doc/HTML | Live component/token showcase (new this pass) |
 | `design/assets/mood-illustrated-propaganda.png` | Image | This pass's chosen mood board (new this pass) |
